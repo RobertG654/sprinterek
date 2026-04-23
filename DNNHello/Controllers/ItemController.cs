@@ -14,7 +14,6 @@ namespace DNNHello.DNNHello.Controllers
     [DnnHandleError]
     public class ItemController : DnnController
     {
-        // 1. LISTÁZÁS
         [ModuleAction(ControlKey = "Edit", TitleKey = "AddItem")]
         public ActionResult Index()
         {
@@ -34,20 +33,14 @@ namespace DNNHello.DNNHello.Controllers
                 items = ItemManager.Instance.GetItemsByUser(ModuleContext.ModuleId, userId);
             }
 
-            // Globális galéria képek
-            var globalItems = Enumerable.Empty<Item>();
-            if (userId != -1)
-            {
-                globalItems = ItemManager.Instance.GetGlobalItems();
-            }
-            ViewBag.GlobalItems = globalItems;
+            // Globális galéria MINDIG betöltődik (bejelentkezés nélkül is)
+            ViewBag.GlobalItems = ItemManager.Instance.GetGlobalItems();
             ViewBag.IsAdmin = User.IsSuperUser || User.IsInRole("Administrators");
             ViewBag.CurrentUserId = userId;
 
             return View(items);
         }
 
-        // 2. TÖRLÉS
         public ActionResult Delete(int itemId)
         {
             var item = ItemManager.Instance.GetItem(itemId, ModuleContext.ModuleId);
@@ -66,7 +59,6 @@ namespace DNNHello.DNNHello.Controllers
             return RedirectToDefaultRoute();
         }
 
-        // 3. EDIT GET
         [HttpGet]
         public ActionResult Edit(int itemId = -1)
         {
@@ -90,7 +82,6 @@ namespace DNNHello.DNNHello.Controllers
             }
         }
 
-        // 4. EDIT POST
         [HttpPost]
         [DotNetNuke.Web.Mvc.Framework.ActionFilters.ValidateAntiForgeryToken]
         public ActionResult Edit(Item item, HttpPostedFileBase file)

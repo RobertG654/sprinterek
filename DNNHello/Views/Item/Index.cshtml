@@ -35,19 +35,19 @@
         }
 
     /* ═══ ADMIN KÁRTYA – bordó alj ═══ */
-    .pp-card-admin .pp-card-title {
-        background: linear-gradient(135deg, #8b2d3a 0%, #a94455 100%);
-        color: #fff;
-        border-radius: 0 0 10px 10px;
-    }
-
-    .pp-card-admin:hover .pp-card-title {
-        color: #ffd6dd;
-    }
-
     .pp-card-admin {
         border-color: #d4a0a8;
     }
+
+        .pp-card-admin .pp-card-title {
+            background: linear-gradient(135deg, #8b2d3a 0%, #a94455 100%);
+            color: #fff;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .pp-card-admin:hover .pp-card-title {
+            color: #fff;
+        }
 
     /* ═══ KÉP ZOOM ═══ */
     .pp-card-img-wrap {
@@ -202,7 +202,7 @@
             box-shadow: 0 0 0 3px rgba(139,45,58,0.15);
         }
 
-    /* ═══ CSILLAG GOMB (jobb felső sarok) ═══ */
+    /* ═══ CSILLAG GOMB ═══ */
     .pp-star-btn {
         position: absolute;
         top: 8px;
@@ -245,7 +245,7 @@
             pointer-events: none;
         }
 
-    /* ═══ USER ENGEDÉLYEZÉS GOMB (bal alsó sarok) ═══ */
+    /* ═══ USER ENGEDÉLYEZÉS GOMB ═══ */
     .pp-approve-btn {
         position: absolute;
         bottom: -10px;
@@ -290,68 +290,72 @@
             pointer-events: none;
         }
 
-    /* ═══ GLOBÁLIS GALÉRIA – PawPromise színpaletta ═══ */
+    /* ═══ KIEMELT KÉPEK GALÉRIA ═══ */
     .pp-global-section {
-        margin-bottom: 30px;
-        padding: 22px 24px;
-        background: linear-gradient(135deg, #5a1a24 0%, #8b2d3a 50%, #a94455 100%);
-        border: none;
+        margin-bottom: 28px;
+        padding: 20px 22px;
+        background: #fff;
+        border: 2px solid #e8c4ca;
         border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(139,45,58,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+        box-shadow: 0 4px 20px rgba(139,45,58,0.08);
         position: relative;
-        overflow: hidden;
     }
 
         .pp-global-section::before {
             content: '';
             position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 25% 35%, rgba(255,255,255,0.06) 0%, transparent 50%), radial-gradient(circle at 75% 65%, rgba(255,200,210,0.05) 0%, transparent 50%);
-            pointer-events: none;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #8b2d3a 0%, #c4687a 50%, #8b2d3a 100%);
+            border-radius: 14px 14px 0 0;
         }
 
     .pp-global-title {
-        font-size: 1.2em;
+        font-size: 1.15em;
         font-weight: 700;
-        color: #ffd6dd;
-        margin-bottom: 16px;
+        color: #8b2d3a;
+        margin-bottom: 14px;
+        margin-top: 4px;
         display: flex;
         align-items: center;
-        gap: 10px;
-        text-shadow: 0 1px 4px rgba(0,0,0,0.3);
-        position: relative;
-        z-index: 1;
+        gap: 8px;
     }
 
         .pp-global-title::after {
             content: '';
             flex: 1;
             height: 1px;
-            background: linear-gradient(90deg, rgba(255,214,221,0.4) 0%, transparent 100%);
+            background: linear-gradient(90deg, #e8c4ca 0%, transparent 100%);
             margin-left: 8px;
         }
 
     .pp-global-section .pp-card {
-        border: 1px solid rgba(255,255,255,0.15);
-        background: rgba(255,255,255,0.08);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        border: 1px solid #f0dce0;
+        background: #fff;
+        box-shadow: 0 2px 10px rgba(139,45,58,0.06);
     }
 
         .pp-global-section .pp-card:hover {
-            box-shadow: 0 12px 36px rgba(255,150,170,0.2);
-            border-color: rgba(255,214,221,0.4);
+            box-shadow: 0 8px 28px rgba(139,45,58,0.12);
+            border-color: #d4a0a8;
         }
 
     .pp-global-section .pp-card-title {
-        color: #f0d0d6;
-        background: transparent;
+        color: #555;
     }
 
     .pp-global-section .pp-card:hover .pp-card-title {
-        color: #fff;
+        color: #8b2d3a;
+    }
+
+    .pp-global-empty {
+        text-align: center;
+        color: #b88a92;
+        padding: 20px 0;
+        font-size: 0.95em;
+        font-style: italic;
     }
 
     /* ═══ BEVEZETŐ SZEKCIÓ ═══ */
@@ -428,12 +432,32 @@
         font-size: 10px;
     }
 
-    .pp-legend-admin-card {
-        width: 22px;
-        height: 22px;
-        border-radius: 4px;
-        background: linear-gradient(135deg, #8b2d3a, #a94455);
-        flex-shrink: 0;
+    /* ═══ BEJELENTKEZÉS SZEKCIÓ ═══ */
+    .pp-login-section {
+        padding: 24px 28px;
+        background: linear-gradient(135deg, #fdf0f2 0%, #f9e0e5 100%);
+        border: 1px solid #e8c4ca;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .pp-login-icon {
+        font-size: 2em;
+        margin-bottom: 8px;
+    }
+
+    .pp-login-title {
+        font-size: 1.1em;
+        font-weight: 700;
+        color: #8b2d3a;
+        margin-bottom: 6px;
+    }
+
+    .pp-login-text {
+        font-size: 0.95em;
+        color: #7a4a53;
+        margin: 0;
+        line-height: 1.5;
     }
 
     /* ═══ LIGHTBOX ═══ */
@@ -475,7 +499,6 @@
         background: rgba(0,0,0,0.5);
         padding: 8px 20px;
         border-radius: 20px;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
     }
 
     .pp-lightbox-close {
@@ -522,67 +545,73 @@
     }
 </style>
 
-@if (Dnn.User.UserID == -1)
-{
-    <div style="padding:20px; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; text-align:center; margin:10px;">
-        <p style="margin:0; font-size:1.1em;">A galéria megtekintéséhez jelentkezz be!</p>
-    </div>
-}
-else
-{
-    <div style="padding:15px 20px; width:100%; box-sizing:border-box;">
+<div style="padding:15px 20px; width:100%; box-sizing:border-box;">
 
-        @* ═══ GLOBÁLIS GALÉRIA ═══ *@
+    @* ═══ KIEMELT KÉPEK (mindig látható, bejelentkezés nélkül is) ═══ *@
+    <div class="pp-global-section">
+        <div class="pp-global-title">★ Kiemelt Képek</div>
         @if (globalItems.Any())
         {
-            <div class="pp-global-section">
-                <div class="pp-global-title">★ Globális Galéria</div>
-                <div class="pp-gallery-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:18px; position:relative; z-index:1;">
-                    @foreach (var gItem in globalItems)
-                    {
-                        <div class="pp-card" onclick="ppOpenLightbox('@Html.Raw(gItem.ImagePath)', '@Html.Raw(gItem.ItemName.Replace("'", "\\'"))')">
-                            @if (!string.IsNullOrEmpty(gItem.ImagePath))
-                            {
-                                <div class="pp-card-img-wrap">
-                                    <img src="@gItem.ImagePath" alt="@gItem.ItemName" class="pp-card-img" />
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="pp-card-noimg">🖼️</div>
-                            }
-                            <div class="pp-card-title">@gItem.ItemName</div>
-                        </div>
-                    }
-                </div>
+            <div class="pp-gallery-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:18px;">
+                @foreach (var gItem in globalItems)
+                {
+                    <div class="pp-card" onclick="ppOpenLightbox('@Html.Raw(gItem.ImagePath)', '@Html.Raw(gItem.ItemName.Replace("'", "\\'"))')">
+                        @if (!string.IsNullOrEmpty(gItem.ImagePath))
+                        {
+                            <div class="pp-card-img-wrap">
+                                <img src="@gItem.ImagePath" alt="@gItem.ItemName" class="pp-card-img" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="pp-card-noimg">🖼️</div>
+                        }
+                        <div class="pp-card-title">@gItem.ItemName</div>
+                    </div>
+                }
             </div>
         }
+        else
+        {
+            <div class="pp-global-empty">Még nincsenek kiemelt képek.</div>
+        }
+    </div>
 
+    @if (Dnn.User.UserID == -1)
+    {
+        @* ═══ NEM BEJELENTKEZETT NÉZET ═══ *@
+        <div class="pp-login-section">
+            <div class="pp-login-icon">📸</div>
+            <div class="pp-login-title">Szeretnél te is képeket feltölteni?</div>
+            <p class="pp-login-text">
+                Jelentkezz be, hogy saját képeidet is feltölthesd a galériába!<br />
+                A legjobb képek bekerülhetnek a Kiemelt Képek közé.
+            </p>
+        </div>
+    }
+    else
+    {
         @* ═══ BEVEZETŐ ═══ *@
         <div class="pp-intro-section">
             <div class="pp-intro-title">📸 Képgaléria</div>
             <p class="pp-intro-text">
-                Töltsd fel saját képeidet a galériába! Az adminisztrátor kiválaszthatja a legjobb képeket
-                a globális galériába, de ehhez neked is engedélyezned kell a képed megosztását.
-                Csak azok a képek jelennek meg a globális galériában, amelyeket az admin kijelölt
-                <strong>és</strong> a feltöltő is jóváhagyott. Kattints bármelyik képre a nagyított megtekintéshez!
+                Itt láthatod a saját feltöltött képeidet. Ha szeretnéd, hogy valamelyik képed
+                bekerüljön a <strong>Kiemelt Képek</strong> közé, engedélyezd a megosztását
+                a kék gombbal. Az admin ezután kiválaszthatja a legjobbakat.
+                Kattints bármelyik képre a nagyított megtekintéshez!
             </p>
             <div class="pp-intro-legend">
                 <div class="pp-legend-item">
                     <span class="pp-legend-icon pp-legend-star">★</span>
-                    <span>Admin kijelölés a globálisba</span>
+                    <span>Admin kijelölte kiemeltnek</span>
                 </div>
                 <div class="pp-legend-item">
                     <span class="pp-legend-icon pp-legend-approve"><span class="pp-legend-approve-inner"></span></span>
-                    <span>Feltöltő engedélyezi a globálist</span>
+                    <span>Megosztás engedélyezve</span>
                 </div>
                 <div class="pp-legend-item">
                     <span class="pp-legend-icon pp-legend-delete">✕</span>
                     <span>Kép törlése</span>
-                </div>
-                <div class="pp-legend-item">
-                    <span class="pp-legend-admin-card"></span>
-                    <span>Admin által feltöltött kép</span>
                 </div>
             </div>
         </div>
@@ -628,14 +657,8 @@ else
             {
                 foreach (var item in Model)
                 {
-                    @* Eldöntjük, admin töltötte-e fel (a feltöltő admin-e) *@
-                    bool isAdminUpload = isAdmin && item.CreatedByUserId == currentUserId;
-                    @* Ha admin nézetben vagyunk ÉS a kép nem a sajátunk,
-                        akkor lekérdezzük – de egyszerűsítés: a DNN nem adja
-                        meg könnyen más user szerepkörét, ezért a trükk:
-                        ha az admin néz minden képet, az ő sajátjai lesznek bordók *@
-
                     bool isOwner = item.CreatedByUserId == currentUserId;
+                    bool isAdminUpload = isAdmin && isOwner;
 
                     <div class="pp-card @(isAdminUpload ? "pp-card-admin" : "")" id="ppCard_@item.ItemId">
                         @if (!string.IsNullOrEmpty(item.ImagePath))
@@ -649,39 +672,37 @@ else
                             <div class="pp-card-noimg">🖼️</div>
                         }
 
-                        @* ── CSILLAG (admin toggle / user readonly) ── *@
+                        @* ── CSILLAG ── *@
                         @if (isAdmin)
                         {
                             <button type="button"
                                     class="pp-star-btn @(item.IsGlobal ? "active" : "")"
                                     onclick="ppToggleStar(@item.ItemId, this); event.stopPropagation();"
-                                    title="Globális galériába helyezés">
+                                    title="Kiemelt képek közé helyezés">
                                 <span class="star-icon">★</span>
                             </button>
                         }
                         else if (item.IsGlobal)
                         {
-                            <span class="pp-star-btn active readonly" title="Globális galériában szerepel">
+                            <span class="pp-star-btn active readonly" title="Kiemelt képek között szerepel">
                                 <span class="star-icon">★</span>
                             </span>
                         }
 
-                        @* ── USER ENGEDÉLYEZÉS (bal alsó kör) ── *@
+                        @* ── USER ENGEDÉLYEZÉS ── *@
                         @if (isOwner)
                         {
-                            @* A kép tulajdonosa (user VAGY admin a sajátjánál) – kattinthat *@
                             <button type="button"
                                     class="pp-approve-btn @(item.IsUserApproved ? "active" : "")"
                                     onclick="ppToggleApproval(@item.ItemId, this); event.stopPropagation();"
-                                    title="@(item.IsUserApproved ? "Engedélyezve a globálisba" : "Engedélyezés a globális galériába")">
+                                    title="@(item.IsUserApproved ? "Megosztás engedélyezve" : "Megosztás engedélyezése")">
                                 <span class="inner-circle"></span>
                             </button>
                         }
                         else if (isAdmin)
                         {
-                            @* Admin látja más user képeinél az állapotot, de NEM kattinthat *@
                             <span class="pp-approve-btn @(item.IsUserApproved ? "active" : "") readonly"
-                                  title="@(item.IsUserApproved ? "User engedélyezte" : "User még nem engedélyezte")">
+                                  title="@(item.IsUserApproved ? "Felhasználó engedélyezte" : "Felhasználó még nem engedélyezte")">
                                 <span class="inner-circle"></span>
                             </span>
                         }
@@ -697,29 +718,29 @@ else
                 }
             }
         </div>
-    </div>
+    }
+</div>
 
-    @* ═══ TÖRLÉS MODAL ═══ *@
-    <div id="ppDelModal"
-         style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:99999; align-items:center; justify-content:center;">
-        <div style="background:#fff; padding:30px; border-radius:12px; box-shadow:0 5px 30px rgba(0,0,0,0.3); text-align:center; max-width:400px; width:90%;">
-            <p style="font-size:1.1em; margin-bottom:5px;"><strong>Törlés megerősítése</strong></p>
-            <p>Biztosan törölni szeretnéd?</p>
-            <p id="ppDelName" style="font-weight:bold; color:#dc3545;"></p>
-            <div style="margin-top:20px; display:flex; gap:10px; justify-content:center;">
-                <button type="button" onclick="ppExecDel()" class="pp-modal-yes">Igen, törlöm</button>
-                <button type="button" onclick="ppCloseDel()" class="pp-modal-no">Mégse</button>
-            </div>
+@* ═══ TÖRLÉS MODAL ═══ *@
+<div id="ppDelModal"
+     style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:99999; align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:30px; border-radius:12px; box-shadow:0 5px 30px rgba(0,0,0,0.3); text-align:center; max-width:400px; width:90%;">
+        <p style="font-size:1.1em; margin-bottom:5px;"><strong>Törlés megerősítése</strong></p>
+        <p>Biztosan törölni szeretnéd?</p>
+        <p id="ppDelName" style="font-weight:bold; color:#dc3545;"></p>
+        <div style="margin-top:20px; display:flex; gap:10px; justify-content:center;">
+            <button type="button" onclick="ppExecDel()" class="pp-modal-yes">Igen, törlöm</button>
+            <button type="button" onclick="ppCloseDel()" class="pp-modal-no">Mégse</button>
         </div>
     </div>
+</div>
 
-    @* ═══ LIGHTBOX ═══ *@
-    <div id="ppLightbox" class="pp-lightbox" onclick="ppCloseLightbox()">
-        <button class="pp-lightbox-close" onclick="ppCloseLightbox()" title="Bezárás">✕</button>
-        <img id="ppLightboxImg" src="" alt="" onclick="event.stopPropagation();" />
-        <div id="ppLightboxTitle" class="pp-lightbox-title"></div>
-    </div>
-}
+@* ═══ LIGHTBOX ═══ *@
+<div id="ppLightbox" class="pp-lightbox" onclick="ppCloseLightbox()">
+    <button class="pp-lightbox-close" onclick="ppCloseLightbox()" title="Bezárás">✕</button>
+    <img id="ppLightboxImg" src="" alt="" onclick="event.stopPropagation();" />
+    <div id="ppLightboxTitle" class="pp-lightbox-title"></div>
+</div>
 
 <script type="text/javascript">
     (function ($) {
@@ -788,7 +809,7 @@ else
                     }
                 },
                 error: function (xhr) {
-                    alert('Hiba a csillagozás során. (' + xhr.status + ')');
+                    alert('Hiba a kijelölés során. (' + xhr.status + ')');
                 }
             });
         };
