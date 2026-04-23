@@ -46,7 +46,7 @@
         }
 
         .pp-card-admin:hover .pp-card-title {
-            color: #fff;
+            color: #fff !important;
         }
 
     /* ═══ KÉP ZOOM ═══ */
@@ -202,6 +202,24 @@
             box-shadow: 0 0 0 3px rgba(139,45,58,0.15);
         }
 
+    /* ═══ FÁJLVÁLASZTÓ LABEL ═══ */
+    .pp-file-label {
+        display: inline-block;
+        padding: 8px 16px;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9em;
+        color: #555;
+        transition: border-color 0.3s ease, background 0.2s ease;
+    }
+
+        .pp-file-label:hover {
+            border-color: #8b2d3a;
+            background: #fdf0f2;
+        }
+
     /* ═══ CSILLAG GOMB ═══ */
     .pp-star-btn {
         position: absolute;
@@ -301,23 +319,11 @@
         position: relative;
     }
 
-        .pp-global-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #8b2d3a 0%, #c4687a 50%, #8b2d3a 100%);
-            border-radius: 14px 14px 0 0;
-        }
-
     .pp-global-title {
         font-size: 1.15em;
         font-weight: 700;
         color: #8b2d3a;
         margin-bottom: 14px;
-        margin-top: 4px;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -547,7 +553,7 @@
 
 <div style="padding:15px 20px; width:100%; box-sizing:border-box;">
 
-    @* ═══ KIEMELT KÉPEK (mindig látható, bejelentkezés nélkül is) ═══ *@
+    @* ═══ KIEMELT KÉPEK (mindig látható) ═══ *@
     <div class="pp-global-section">
         <div class="pp-global-title">★ Kiemelt Képek</div>
         @if (globalItems.Any())
@@ -627,10 +633,14 @@
                                class="pp-name-input" />
                     </td>
                     <td style="padding:0 10px 0 0; border:none; background:transparent; white-space:nowrap;">
-                        <input type="file"
-                               id="ppFile_@Dnn.ModuleContext.ModuleId"
-                               accept="image/*"
-                               style="font-size:0.9em;" />
+                        <label class="pp-file-label" id="ppFileLabel_@Dnn.ModuleContext.ModuleId">
+                            📁 Kép kiválasztása
+                            <input type="file"
+                                   id="ppFile_@Dnn.ModuleContext.ModuleId"
+                                   accept="image/*"
+                                   style="display:none;" />
+                        </label>
+                        <span id="ppFileName_@Dnn.ModuleContext.ModuleId" style="margin-left:8px; font-size:0.88em; color:#888;">Nincs kiválasztva fájl</span>
                     </td>
                     <td style="padding:0; border:none; background:transparent; white-space:nowrap; text-align:right;">
                         <button type="button"
@@ -747,6 +757,12 @@
         var mid = '@Dnn.ModuleContext.ModuleId';
         var sf = $.ServicesFramework(parseInt(mid));
         var delId = null;
+
+        // ═══ FÁJLNÉV MEGJELENÍTÉS (magyar) ═══
+        $('#ppFile_' + mid).on('change', function () {
+            var fileName = this.files && this.files.length > 0 ? this.files[0].name : 'Nincs kiválasztva fájl';
+            $('#ppFileName_' + mid).text(fileName);
+        });
 
         // ═══ FELTÖLTÉS ═══
         $('#ppUploadBtn_' + mid).on('click', function () {
