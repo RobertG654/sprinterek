@@ -86,6 +86,7 @@ namespace DNNHello.DNNHello.Controllers
         }
 
         // ── User engedélyezés (IsUserApproved toggle) ──
+        // MÓDOSÍTVA: A kép tulajdonosa állíthatja (user VAGY admin a sajátjánál)
         [System.Web.Http.HttpPost]
         [DnnAuthorize]
         public System.Web.Http.IHttpActionResult ToggleUserApproval(int itemId)
@@ -96,7 +97,7 @@ namespace DNNHello.DNNHello.Controllers
                 if (item == null)
                     return NotFound();
 
-                // Csak a saját képét engedélyezheti, admin NEM állíthatja
+                // A kép tulajdonosa állíthatja (legyen az admin vagy sima user)
                 bool isOwner = item.CreatedByUserId == UserInfo.UserID;
 
                 if (!isOwner)

@@ -34,6 +34,21 @@
             box-shadow: 0 12px 28px rgba(0,0,0,0.15);
         }
 
+    /* ═══ ADMIN KÁRTYA – bordó alj ═══ */
+    .pp-card-admin .pp-card-title {
+        background: linear-gradient(135deg, #8b2d3a 0%, #a94455 100%);
+        color: #fff;
+        border-radius: 0 0 10px 10px;
+    }
+
+    .pp-card-admin:hover .pp-card-title {
+        color: #ffd6dd;
+    }
+
+    .pp-card-admin {
+        border-color: #d4a0a8;
+    }
+
     /* ═══ KÉP ZOOM ═══ */
     .pp-card-img-wrap {
         width: 100%;
@@ -97,7 +112,7 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        transition: color 0.3s ease;
+        transition: color 0.3s ease, background 0.3s ease;
     }
 
     .pp-card:hover .pp-card-title {
@@ -137,7 +152,7 @@
         border-radius: 10px 10px 0 0;
     }
 
-    /* ═══ MODAL ═══ */
+    /* ═══ MODAL GOMBOK ═══ */
     .pp-modal-yes {
         padding: 10px 20px;
         background: #dc3545;
@@ -275,14 +290,14 @@
             pointer-events: none;
         }
 
-    /* ═══ GLOBÁLIS GALÉRIA ═══ */
+    /* ═══ GLOBÁLIS GALÉRIA – PawPromise színpaletta ═══ */
     .pp-global-section {
         margin-bottom: 30px;
         padding: 22px 24px;
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        background: linear-gradient(135deg, #5a1a24 0%, #8b2d3a 50%, #a94455 100%);
         border: none;
         border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.05);
+        box-shadow: 0 8px 32px rgba(139,45,58,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
         position: relative;
         overflow: hidden;
     }
@@ -294,14 +309,14 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle at 30% 40%, rgba(255,193,7,0.08) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(100,149,237,0.06) 0%, transparent 50%);
+            background: radial-gradient(circle at 25% 35%, rgba(255,255,255,0.06) 0%, transparent 50%), radial-gradient(circle at 75% 65%, rgba(255,200,210,0.05) 0%, transparent 50%);
             pointer-events: none;
         }
 
     .pp-global-title {
         font-size: 1.2em;
         font-weight: 700;
-        color: #ffc107;
+        color: #ffd6dd;
         margin-bottom: 16px;
         display: flex;
         align-items: center;
@@ -315,27 +330,28 @@
             content: '';
             flex: 1;
             height: 1px;
-            background: linear-gradient(90deg, rgba(255,193,7,0.4) 0%, transparent 100%);
+            background: linear-gradient(90deg, rgba(255,214,221,0.4) 0%, transparent 100%);
             margin-left: 8px;
         }
 
     .pp-global-section .pp-card {
-        border: 1px solid rgba(255,255,255,0.1);
-        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.08);
         box-shadow: 0 4px 16px rgba(0,0,0,0.2);
     }
 
         .pp-global-section .pp-card:hover {
-            box-shadow: 0 12px 36px rgba(255,193,7,0.15);
-            border-color: rgba(255,193,7,0.3);
+            box-shadow: 0 12px 36px rgba(255,150,170,0.2);
+            border-color: rgba(255,214,221,0.4);
         }
 
     .pp-global-section .pp-card-title {
-        color: #e0e0e0;
+        color: #f0d0d6;
+        background: transparent;
     }
 
     .pp-global-section .pp-card:hover .pp-card-title {
-        color: #ffc107;
+        color: #fff;
     }
 
     /* ═══ BEVEZETŐ SZEKCIÓ ═══ */
@@ -350,7 +366,7 @@
     .pp-intro-title {
         font-size: 1.15em;
         font-weight: 700;
-        color: #333;
+        color: #8b2d3a;
         margin-bottom: 8px;
     }
 
@@ -412,6 +428,79 @@
         font-size: 10px;
     }
 
+    .pp-legend-admin-card {
+        width: 22px;
+        height: 22px;
+        border-radius: 4px;
+        background: linear-gradient(135deg, #8b2d3a, #a94455);
+        flex-shrink: 0;
+    }
+
+    /* ═══ LIGHTBOX ═══ */
+    .pp-lightbox {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 100000;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+        .pp-lightbox.active {
+            display: flex;
+        }
+
+        .pp-lightbox img {
+            max-width: 90vw;
+            max-height: 85vh;
+            border-radius: 12px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+            object-fit: contain;
+            cursor: default;
+        }
+
+    .pp-lightbox-title {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #fff;
+        font-size: 1.1em;
+        font-weight: 600;
+        background: rgba(0,0,0,0.5);
+        padding: 8px 20px;
+        border-radius: 20px;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    .pp-lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.15);
+        border: none;
+        color: #fff;
+        font-size: 22px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+        .pp-lightbox-close:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+
     /* ═══ RESZPONZÍV ═══ */
     @@media (max-width: 768px) {
         .pp-gallery-grid {
@@ -451,7 +540,7 @@ else
                 <div class="pp-gallery-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:18px; position:relative; z-index:1;">
                     @foreach (var gItem in globalItems)
                     {
-                        <div class="pp-card">
+                        <div class="pp-card" onclick="ppOpenLightbox('@Html.Raw(gItem.ImagePath)', '@Html.Raw(gItem.ItemName.Replace("'", "\\'"))')">
                             @if (!string.IsNullOrEmpty(gItem.ImagePath))
                             {
                                 <div class="pp-card-img-wrap">
@@ -476,20 +565,24 @@ else
                 Töltsd fel saját képeidet a galériába! Az adminisztrátor kiválaszthatja a legjobb képeket
                 a globális galériába, de ehhez neked is engedélyezned kell a képed megosztását.
                 Csak azok a képek jelennek meg a globális galériában, amelyeket az admin kijelölt
-                <strong>és</strong> a feltöltő felhasználó is jóváhagyott.
+                <strong>és</strong> a feltöltő is jóváhagyott. Kattints bármelyik képre a nagyított megtekintéshez!
             </p>
             <div class="pp-intro-legend">
                 <div class="pp-legend-item">
                     <span class="pp-legend-icon pp-legend-star">★</span>
-                    <span>Admin kijelölés a globális galériába</span>
+                    <span>Admin kijelölés a globálisba</span>
                 </div>
                 <div class="pp-legend-item">
                     <span class="pp-legend-icon pp-legend-approve"><span class="pp-legend-approve-inner"></span></span>
-                    <span>Engedélyezés a globálisba (feltöltő állítja)</span>
+                    <span>Feltöltő engedélyezi a globálist</span>
                 </div>
                 <div class="pp-legend-item">
                     <span class="pp-legend-icon pp-legend-delete">✕</span>
                     <span>Kép törlése</span>
+                </div>
+                <div class="pp-legend-item">
+                    <span class="pp-legend-admin-card"></span>
+                    <span>Admin által feltöltött kép</span>
                 </div>
             </div>
         </div>
@@ -535,10 +628,19 @@ else
             {
                 foreach (var item in Model)
                 {
-                    <div class="pp-card" id="ppCard_@item.ItemId">
+                    @* Eldöntjük, admin töltötte-e fel (a feltöltő admin-e) *@
+                    bool isAdminUpload = isAdmin && item.CreatedByUserId == currentUserId;
+                    @* Ha admin nézetben vagyunk ÉS a kép nem a sajátunk,
+                        akkor lekérdezzük – de egyszerűsítés: a DNN nem adja
+                        meg könnyen más user szerepkörét, ezért a trükk:
+                        ha az admin néz minden képet, az ő sajátjai lesznek bordók *@
+
+                    bool isOwner = item.CreatedByUserId == currentUserId;
+
+                    <div class="pp-card @(isAdminUpload ? "pp-card-admin" : "")" id="ppCard_@item.ItemId">
                         @if (!string.IsNullOrEmpty(item.ImagePath))
                         {
-                            <div class="pp-card-img-wrap">
+                            <div class="pp-card-img-wrap" onclick="ppOpenLightbox('@Html.Raw(item.ImagePath)', '@Html.Raw(item.ItemName.Replace("'", "\\'"))')">
                                 <img src="@item.ImagePath" alt="@item.ItemName" class="pp-card-img" />
                             </div>
                         }
@@ -547,12 +649,12 @@ else
                             <div class="pp-card-noimg">🖼️</div>
                         }
 
-                        @* ── CSILLAG (admin toggle / user+admin readonly) ── *@
+                        @* ── CSILLAG (admin toggle / user readonly) ── *@
                         @if (isAdmin)
                         {
                             <button type="button"
                                     class="pp-star-btn @(item.IsGlobal ? "active" : "")"
-                                    onclick="ppToggleStar(@item.ItemId, this)"
+                                    onclick="ppToggleStar(@item.ItemId, this); event.stopPropagation();"
                                     title="Globális galériába helyezés">
                                 <span class="star-icon">★</span>
                             </button>
@@ -565,22 +667,19 @@ else
                         }
 
                         @* ── USER ENGEDÉLYEZÉS (bal alsó kör) ── *@
-                        @{
-                            bool isOwner = item.CreatedByUserId == currentUserId;
-                        }
-                        @if (isOwner && !isAdmin)
+                        @if (isOwner)
                         {
-                            @* A kép tulajdonosa (nem admin) – kattinthat *@
+                            @* A kép tulajdonosa (user VAGY admin a sajátjánál) – kattinthat *@
                             <button type="button"
                                     class="pp-approve-btn @(item.IsUserApproved ? "active" : "")"
-                                    onclick="ppToggleApproval(@item.ItemId, this)"
+                                    onclick="ppToggleApproval(@item.ItemId, this); event.stopPropagation();"
                                     title="@(item.IsUserApproved ? "Engedélyezve a globálisba" : "Engedélyezés a globális galériába")">
                                 <span class="inner-circle"></span>
                             </button>
                         }
                         else if (isAdmin)
                         {
-                            @* Admin látja az állapotot, de NEM kattinthat *@
+                            @* Admin látja más user képeinél az állapotot, de NEM kattinthat *@
                             <span class="pp-approve-btn @(item.IsUserApproved ? "active" : "") readonly"
                                   title="@(item.IsUserApproved ? "User engedélyezte" : "User még nem engedélyezte")">
                                 <span class="inner-circle"></span>
@@ -591,7 +690,7 @@ else
 
                         <button type="button"
                                 class="pp-del-btn"
-                                onclick="ppDel(@item.ItemId, '@Html.Raw(item.ItemName.Replace("'", "\\'"))')">
+                                onclick="ppDel(@item.ItemId, '@Html.Raw(item.ItemName.Replace("'", "\\'"))'); event.stopPropagation();">
                             ✕
                         </button>
                     </div>
@@ -612,6 +711,13 @@ else
                 <button type="button" onclick="ppCloseDel()" class="pp-modal-no">Mégse</button>
             </div>
         </div>
+    </div>
+
+    @* ═══ LIGHTBOX ═══ *@
+    <div id="ppLightbox" class="pp-lightbox" onclick="ppCloseLightbox()">
+        <button class="pp-lightbox-close" onclick="ppCloseLightbox()" title="Bezárás">✕</button>
+        <img id="ppLightboxImg" src="" alt="" onclick="event.stopPropagation();" />
+        <div id="ppLightboxTitle" class="pp-lightbox-title"></div>
     </div>
 }
 
@@ -667,10 +773,9 @@ else
             });
         });
 
-        // ═══ CSILLAG TOGGLE (admin – IsGlobal) ═══
+        // ═══ CSILLAG TOGGLE ═══
         window.ppToggleStar = function (itemId, btn) {
             var apiUrl = sf.getServiceRoot('DNNHello') + 'GalleryApi/ToggleGlobal?itemId=' + itemId;
-
             $.ajax({
                 url: apiUrl,
                 type: 'POST',
@@ -688,10 +793,9 @@ else
             });
         };
 
-        // ═══ USER ENGEDÉLYEZÉS TOGGLE (IsUserApproved) ═══
+        // ═══ USER ENGEDÉLYEZÉS TOGGLE ═══
         window.ppToggleApproval = function (itemId, btn) {
             var apiUrl = sf.getServiceRoot('DNNHello') + 'GalleryApi/ToggleUserApproval?itemId=' + itemId;
-
             $.ajax({
                 url: apiUrl,
                 type: 'POST',
@@ -707,6 +811,21 @@ else
                     alert('Hiba az engedélyezés során. (' + xhr.status + ')');
                 }
             });
+        };
+
+        // ═══ LIGHTBOX ═══
+        window.ppOpenLightbox = function (imgPath, imgName) {
+            document.getElementById('ppLightboxImg').src = imgPath;
+            document.getElementById('ppLightboxImg').alt = imgName;
+            document.getElementById('ppLightboxTitle').innerText = imgName;
+            document.getElementById('ppLightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.ppCloseLightbox = function () {
+            document.getElementById('ppLightbox').classList.remove('active');
+            document.getElementById('ppLightboxImg').src = '';
+            document.body.style.overflow = '';
         };
 
         // ═══ TÖRLÉS ═══
@@ -728,7 +847,10 @@ else
         };
 
         $(document).on('keydown', function (e) {
-            if (e.key === 'Escape') ppCloseDel();
+            if (e.key === 'Escape') {
+                ppCloseLightbox();
+                ppCloseDel();
+            }
         });
 
     }(jQuery));
