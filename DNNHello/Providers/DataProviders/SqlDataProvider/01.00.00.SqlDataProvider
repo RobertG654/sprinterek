@@ -1,0 +1,31 @@
+﻿IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('dbo.DNNHello_Items') AND type = 'U')
+BEGIN
+    CREATE TABLE dbo.DNNHello_Items (
+        ItemId INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        ItemName NVARCHAR(255),
+        ItemDescription NVARCHAR(MAX),
+        AssignedUserId INT,
+        ModuleId INT NOT NULL,
+        CreatedOnDate DATETIME,
+        CreatedByUserId INT,
+        LastModifiedOnDate DATETIME,
+        LastModifiedByUserId INT,
+        ImagePath NVARCHAR(500),
+        IsGlobal BIT NOT NULL DEFAULT 0,
+        IsUserApproved BIT NOT NULL DEFAULT 0
+    )
+END
+GO
+
+-- Ha a tábla már létezik de hiányoznak az új oszlopok
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.DNNHello_Items') AND name = 'IsGlobal')
+BEGIN
+    ALTER TABLE dbo.DNNHello_Items ADD [IsGlobal] BIT NOT NULL DEFAULT 0;
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.DNNHello_Items') AND name = 'IsUserApproved')
+BEGIN
+    ALTER TABLE dbo.DNNHello_Items ADD [IsUserApproved] BIT NOT NULL DEFAULT 0;
+END
+GO
