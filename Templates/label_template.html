@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<!--
+  REFERENCE TEMPLATE — not used for active PDF generation.
+  The application uses QuestPDF (LabelTemplateService.cs) to generate PDFs.
+
+  This HTML template represents the shipping label structure.
+  If you switch to an HTML-to-PDF approach, replace the {{PLACEHOLDER}} tokens.
+
+  PLACEHOLDERS:
+    {{LABEL_DATE}}           - Cimke dátuma (e.g., 2024.01.15)
+    {{ORDER_ID}}             - Rendelés azonosítója
+    {{RECIPIENT_NAME}}       - Címzett neve
+    {{SHIPPING_LINE1}}       - Szállítási cím 1. sor
+    {{SHIPPING_LINE2}}       - Szállítási cím 2. sor (opcionális)
+    {{SHIPPING_CITY}}        - Város + irányítószám
+    {{SHIPPING_COUNTRY}}     - Ország
+    {{RECIPIENT_PHONE}}      - Telefonszám (opcionális)
+    {{RECIPIENT_EMAIL}}      - Email cím
+    {{SHIPPING_METHOD}}      - Szállítási mód
+-->
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <title>Szállítási cimke - {{ORDER_ID}}</title>
+  <style>
+    @page { size: A6; margin: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 10pt;
+      margin: 8px;
+      border: 2px solid #000;
+      padding: 0;
+    }
+    .header {
+      background: #000;
+      color: #fff;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-title { font-size: 14pt; font-weight: bold; }
+    .header-date { font-size: 9pt; color: #ccc; }
+    .recipient-section { padding: 10px; }
+    .section-label { font-size: 7pt; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 4px; }
+    .recipient-name { font-size: 16pt; font-weight: bold; margin: 4px 0 8px 0; }
+    .address-line { font-size: 12pt; }
+    .city-line { font-size: 13pt; font-weight: bold; }
+    .country-line { font-size: 11pt; color: #555; }
+    .info-row {
+      border-top: 1px solid #ddd;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .info-col { width: 48%; }
+    .barcode-area {
+      border-top: 1px solid #ddd;
+      padding: 6px;
+      text-align: center;
+      color: #aaa;
+      font-size: 8pt;
+      letter-spacing: 3px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="header-title">SZÁLLÍTÁSI CIMKE</span>
+    <span class="header-date">{{LABEL_DATE}}</span>
+  </div>
+
+  <div class="recipient-section">
+    <div class="section-label">Címzett</div>
+    <div class="recipient-name">{{RECIPIENT_NAME}}</div>
+    <div class="address-line">{{SHIPPING_LINE1}}</div>
+    <div class="address-line">{{SHIPPING_LINE2}}</div>
+    <div class="city-line">{{SHIPPING_CITY}}</div>
+    <div class="country-line">{{SHIPPING_COUNTRY}}</div>
+  </div>
+
+  <div class="info-row">
+    <div class="info-col">
+      <div class="section-label">Kapcsolat</div>
+      <div>{{RECIPIENT_PHONE}}</div>
+      <div style="font-size:8pt; color:#666;">{{RECIPIENT_EMAIL}}</div>
+    </div>
+    <div class="info-col">
+      <div class="section-label">Rendelés</div>
+      <div style="font-size:8pt;">{{ORDER_ID}}</div>
+      <div style="font-size:8pt; color:#666;">{{SHIPPING_METHOD}}</div>
+    </div>
+  </div>
+
+  <div class="barcode-area">
+    ||| {{ORDER_ID}} |||
+    <br><small>(vonalkód helyőrző)</small>
+  </div>
+
+</body>
+</html>

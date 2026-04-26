@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>HotcakesWinFormsApp</AssemblyName>
+    <RootNamespace>HotcakesWinFormsApp</RootNamespace>
+    <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Configuration: reads appsettings.json at runtime.
+      Microsoft.Extensions.Configuration.Binder lets us use config.Bind(settings).
+    -->
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" />
+
+    <!--
+      QuestPDF: pure .NET PDF generation, no external tools required.
+      Version 2024.x uses the Community license for free use.
+      See: https://www.questpdf.com/license/
+    -->
+    <PackageReference Include="QuestPDF" Version="2024.3.4" />
+
+    <!--
+      ZXing.Net: real barcode generation for shipping labels.
+      Used via BarcodeWriterPixelData (core library) + System.Drawing.Common
+      (already referenced transitively via WinForms) to turn the result into a PNG.
+    -->
+    <PackageReference Include="ZXing.Net" Version="0.16.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Copy appsettings and templates to output directory -->
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!--
+      companysettings.json and apisettings.json are generated at runtime
+      when the application first starts (see CompanySettings.LoadOrCreate()
+      and ApiSettingsStore.Load/Save). They are intentionally NOT pre-bundled
+      so each installation keeps its own local copy.
+    -->
+    <None Update="Templates\invoice_template.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\label_template.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
