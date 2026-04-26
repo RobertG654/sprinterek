@@ -129,7 +129,7 @@ A mock mód aktív állapotát narancssárga badge jelzi a főablakon.
 
 ## Az alkalmazás működése
 
-### Indítási folyamat
+### Indítási folyamat AAAA
 1. Induláskor betöltődik az `appsettings.json`, majd felülírják az `apisettings.json` értékei (ha léteznek).
 2. Ha nincs érvényes API kulcs (és nincs mock mód), az **API kapcsolat beállítása** ablak jelenik meg (lásd fentebb).
 3. Érvényes beállítás esetén rögtön a főablak nyílik meg.
