@@ -58,7 +58,7 @@ Ez eltér az `/orders` végponttól, ahol `Content` maga a tömb.
 A Hotcakes API az items végponton a `bvin` (GUID) alapú útvonalat várja, nem a numerikus `Id`-t.  
 Például:
 ```
-http://4.231.236.217/DesktopModules/Hotcakes/API/rest/v1/orders/84f5d6cc-1017-4022-96d3-3be7ea02c39a/items?key=1-95e91b38-...
+http://4.231.236.217/DesktopModules/Hotcakes/API/rest/v1/orders/84f5d6cc-1017-4022-96d3-3be7ea02c39a/items?key=YOUR_API_KEY
 ```
 
 ---
@@ -90,10 +90,15 @@ Az alkalmazás első indításakor (ha még nincs beállítva API kulcs) automat
 4. Kattintson a **Kapcsolat tesztelése** gombra — a rendszer meghívja `/orders`-t és kiírja a választ
 5. Mentse a beállításokat a **Mentés és folytatás** gombbal
 
-A beállítások helyi JSON fájlba kerülnek:
+A beállítások a felhasználó **roaming profiljába** kerülnek — a projekt mappán **kívülre**:
 ```
-HotcakesWinFormsApp\bin\Debug\net8.0-windows\apisettings.json
+%APPDATA%\HotcakesWinFormsApp\apisettings.json
 ```
+(pl. `C:\Users\Alice\AppData\Roaming\HotcakesWinFormsApp\apisettings.json`)
+
+> 🔒 **Miért nem a projekt mappájában?** Az API kulcs titkos érték. Azzal, hogy `%APPDATA%`-ban tároljuk, a kulcs sosem kerül a klónozott / fordított projekt fa alá, így egy `git add .` a projekt mappából nem tudja véletlenül commit-olni. Egy fejlesztő nyugodtan push-olhatja a repót egy publikus GitHub-ra anélkül, hogy a kulcsát megosztaná. A `.gitignore` is tartalmaz egy belt-and-suspenders bejegyzést `apisettings.json`-re arra az esetre, ha egy jövőbeli refaktorálás véletlenül a projekt mappába dobná.
+
+Egy korábbi verzió a `bin\Debug\net8.0-windows\apisettings.json` útvonalat használta. Az alkalmazás indításkor automatikusan átmásolja a régi fájlt az új helyre és törli az eredetit (lásd `ApiSettingsStore.MigrateLegacyFileIfNeeded`).
 
 Az API kulcs a következő DNN admin oldalon hozható létre:
 ```
@@ -103,7 +108,31 @@ http://[your-site]/DesktopModules/Hotcakes/Core/Admin/configuration/Api.aspx
 > **Fontos:** Az API kulcs **query string paraméterként** kerül átadásra (`?key=...`),
 > **nem** HTTP headerben.
 
-Az `apisettings.json` értékei felülírják az `appsettings.json`-ban megadott értékeket — így a felhasználó a telepítés után is módosíthatja a kapcsolati adatokat a telepített fájlok módosítása nélkül.
+Az `apisettings.json` (a `%APPDATA%`-ban) értékei felülírják az `appsettings.json`-ban megadott értékeket — így a felhasználó a telepítés után is módosíthatja a kapcsolati adatokat a telepített fájlok módosítása nélkül.
+
+### Friss klón egy új gépen
+
+Egy új fejlesztő számára, aki frissen klónozza a repót:
+
+1. A `appsettings.json` üres `ApiKey`-jel jön (csak placeholder).
+2. A `%APPDATA%\HotcakesWinFormsApp\apisettings.json` még nem létezik.
+3. Indításkor automatikusan megnyílik az **API kapcsolat beállítása** ablak, és a fejlesztő beírja a saját kulcsát.
+4. A kulcs a saját `%APPDATA%`-jába kerül — sosem a projekt fa alá.
+
+### Mi van, ha mégis commit-oltam egy kulcsot korábban?
+
+A jelen repó történetében **már szerepel** egy korábbi API kulcs (`appsettings.json` és a `README.md` is tartalmazta egy korai commit-ban). A jelenlegi munkamásolat tisztázása után is **a `git log -p` vissza tudja keresni** ezt a kulcsot. Két lehetőség:
+
+1. **Forgassa le a kulcsot a Hotcakes admin oldalán** (DNN > Hotcakes > Configuration > API → új kulcs generálása, régi visszavonása). Ez a legegyszerűbb és kötelező lépés mielőtt publikus repót csinál belőle.
+2. (Opcionális) Ha a teljes történetből is ki akarja törölni: használjon `git filter-repo`-t vagy a [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/)-t, majd `git push --force`. Ez átírja a remote történetet — vegye figyelembe, hogy a már klónozott repóknak rebase-elniük kell.
+
+### Beállítások módosítása futás közben
+
+A főablak jobb felső sarkában található **„⚙ API beállítások"** gombbal bármikor újranyithatja az **API kapcsolat beállítása** ablakot:
+
+1. Megjelenik a jelenlegi mentett URL/kulcs.
+2. A „Kapcsolat tesztelése" gomb a friss mezőkkel (még mentés előtt) próbál ki egy `/orders` hívást.
+3. „Mentés és folytatás" után az alkalmazás automatikusan újraépíti az API klienseket az új beállításokkal és frissíti a rendelés-listát — **alkalmazás újraindítás nem szükséges**.
 
 ### Végső kérés URL-je
 
@@ -129,7 +158,7 @@ A mock mód aktív állapotát narancssárga badge jelzi a főablakon.
 
 ## Az alkalmazás működése
 
-### Indítási folyamat AAAA
+### Indítási folyamat
 1. Induláskor betöltődik az `appsettings.json`, majd felülírják az `apisettings.json` értékei (ha léteznek).
 2. Ha nincs érvényes API kulcs (és nincs mock mód), az **API kapcsolat beállítása** ablak jelenik meg (lásd fentebb).
 3. Érvényes beállítás esetén rögtön a főablak nyílik meg.

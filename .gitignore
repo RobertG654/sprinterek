@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# ─── Project-specific: never commit user-local config / secrets ──────────────
+# The Hotcakes API key lives in %APPDATA%\HotcakesWinFormsApp\apisettings.json
+# (see ApiSettingsStore.cs) so the file shouldn't appear inside the project
+# folder at all. These globs are belt-and-suspenders for future refactors that
+# might accidentally drop a copy here.
+apisettings.json
+companysettings.json

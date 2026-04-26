@@ -28,6 +28,7 @@ public class MainForm : Form
     private Label _lblApiUrl = null!;
     private Label _lblMockBadge = null!;
     private Button _btnRefresh = null!;
+    private Button _btnApiSettings = null!;
 
     private GroupBox _grpOrders = null!;
     private DataGridView _dgvOrders = null!;
@@ -55,9 +56,12 @@ public class MainForm : Form
     private ToolStripStatusLabel _lblStatus = null!;
 
     // ── Services ─────────────────────────────────────────────────────────────
-    private readonly HotcakesApiService _apiService;
+    // Not readonly: when the user updates API settings via the in-app
+    // ApiSettingsForm we recreate these so the new URL/key takes effect
+    // without restarting the application.
+    private HotcakesApiService _apiService;
     private readonly PdfService _pdfService;
-    private readonly OrderStatusUpdateService _statusService;
+    private OrderStatusUpdateService _statusService;
 
     // ── State ────────────────────────────────────────────────────────────────
     private OrderDetail? _selectedOrder;
@@ -130,14 +134,28 @@ public class MainForm : Form
         };
         _btnRefresh.Click += async (_, _) => await LoadOrdersAsync();
 
-        _topPanel.Controls.AddRange(new Control[] { _lblApiUrl, _lblMockBadge, _btnRefresh });
-        PositionRefreshButton();
-        _topPanel.Resize += (_, _) => PositionRefreshButton();
+        // Discoverable in-app way to update the API URL / key. Without this the
+        // user would have to delete bin\...\apisettings.json by hand to force the
+        // settings form to reappear (because that file overrides appsettings.json).
+        _btnApiSettings = new Button
+        {
+            Text = "⚙ API beállítások",
+            Size = new Size(150, 30),
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
+        };
+        _btnApiSettings.Click += async (_, _) => await OpenApiSettingsAsync();
+
+        _topPanel.Controls.AddRange(new Control[] { _lblApiUrl, _lblMockBadge, _btnApiSettings, _btnRefresh });
+        PositionTopRightButtons();
+        _topPanel.Resize += (_, _) => PositionTopRightButtons();
         Controls.Add(_topPanel);
     }
 
-    private void PositionRefreshButton() =>
-        _btnRefresh.Location = new Point(_topPanel.Width - _btnRefresh.Width - 8, 9);
+    private void PositionTopRightButtons()
+    {
+        _btnRefresh.Location     = new Point(_topPanel.Width - _btnRefresh.Width - 8, 9);
+        _btnApiSettings.Location = new Point(_btnRefresh.Left - _btnApiSettings.Width - 6, 9);
+    }
 
     private void BuildStatusStrip()
     {
@@ -882,6 +900,38 @@ public class MainForm : Form
         {
             _btnLabel.Enabled = true;
         }
+    }
+
+    // ── API settings (in-app re-open) ───────────────────────────────────────
+
+    /// <summary>
+    /// Opens <see cref="ApiSettingsForm"/> so the user can change the Hotcakes
+    /// connection (Base URL / API path / API key) without restarting the app
+    /// or hand-editing JSON files.
+    ///
+    /// On a successful save, <see cref="ApiSettingsForm.SaveAndClose"/> already
+    /// mirrors the new values into <see cref="Program.Settings"/> — but the
+    /// existing service instances captured the OLD URL/key, so we recreate them
+    /// here and refresh the UI bits that depend on the URL.
+    /// </summary>
+    private async Task OpenApiSettingsAsync()
+    {
+        using var dlg = new ApiSettingsForm();
+        var result = dlg.ShowDialog(this);
+        if (result != DialogResult.OK) return;
+
+        // Settings have already been written by the form. Rebuild services that
+        // captured the old configuration.
+        _apiService    = new HotcakesApiService(Program.Settings);
+        _statusService = new OrderStatusUpdateService(Program.Settings);
+
+        // Refresh the URL label in the top panel.
+        _lblApiUrl.Text =
+            $"API: {Program.Settings.Hotcakes.BaseUrl.TrimEnd('/')}/" +
+            $"{Program.Settings.Hotcakes.ApiBasePath.Trim('/')}";
+
+        SetStatus("API beállítások frissítve — rendelések újratöltése...");
+        await LoadOrdersAsync();
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
