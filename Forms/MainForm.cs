@@ -1,6 +1,7 @@
 using HotcakesWinFormsApp.Helpers;
 using HotcakesWinFormsApp.Models;
 using HotcakesWinFormsApp.Services;
+using HotcakesWinFormsApp.UI;
 using HotcakesWinFormsApp.ViewModels;
 
 namespace HotcakesWinFormsApp.Forms;
@@ -8,29 +9,35 @@ namespace HotcakesWinFormsApp.Forms;
 /// <summary>
 /// Main application form.
 ///
-/// Layout:
-///   Top panel (API URL info, mock badge, refresh button)
-///   Orders group:
-///     - search bar (filters OrderNumber / CustomerName / UserEmail in real time)
-///     - DataGridView showing ONE page of 20 orders
+/// Layout (visual redesign — Pawpromise palette):
+///   AppHeaderBar (wine bar with brand, API url, mock badge, refresh / settings buttons)
+///   Orders card:
+///     - section header ("RENDELÉSEK" + count)
+///     - search bar
+///     - DataGridView showing ONE page of 20 orders, with custom-painted status cells
 ///     - pager (Prev / "Page X / Y" / Next)
-///   Lines group:
-///     - DataGridView showing items of the selected order
-///     - action buttons (invoice / label PDF)
-///   Status strip
+///   Lines card:
+///     - section header ("RENDELÉS TÉTELEI" + selected order number)
+///     - DataGridView with the items of the selected order
+///   Action strip at the bottom:
+///     - rounded "Számla generálás" / "Címke generálás" primary buttons
+///     - right-aligned ghost "Visszaállítás 'Received'" button
+///   StatusStrip at the very bottom
 ///
 /// SEARCH + PAGINATION are client-side only — no extra API calls are issued.
+/// FUNCTIONALITY IS UNCHANGED — only the visuals were reworked.
 /// </summary>
 public class MainForm : Form
 {
     // ── UI controls ──────────────────────────────────────────────────────────
-    private Panel _topPanel = null!;
+    private AppHeaderBar _headerBar = null!;
     private Label _lblApiUrl = null!;
     private Label _lblMockBadge = null!;
-    private Button _btnRefresh = null!;
-    private Button _btnApiSettings = null!;
+    private ModernButton _btnRefresh = null!;
+    private ModernButton _btnApiSettings = null!;
 
-    private GroupBox _grpOrders = null!;
+    private CardPanel _grpOrders = null!;
+    private SectionHeader _ordersHeader = null!;
     private DataGridView _dgvOrders = null!;
 
     // Search bar
@@ -40,17 +47,18 @@ public class MainForm : Form
 
     // Pagination controls
     private Panel _pagerPanel = null!;
-    private Button _btnPrevPage = null!;
-    private Button _btnNextPage = null!;
+    private ModernButton _btnPrevPage = null!;
+    private ModernButton _btnNextPage = null!;
     private Label _lblPageIndicator = null!;
 
-    private GroupBox _grpLines = null!;
+    private CardPanel _grpLines = null!;
+    private SectionHeader _linesHeader = null!;
     private DataGridView _dgvLines = null!;
     private Label _lblNoItemsInfo = null!;
 
-    private Button _btnInvoice = null!;
-    private Button _btnLabel = null!;
-    private Button _btnRevertToReceived = null!;
+    private ModernButton _btnInvoice = null!;
+    private ModernButton _btnLabel = null!;
+    private ModernButton _btnRevertToReceived = null!;
 
     private StatusStrip _statusStrip = null!;
     private ToolStripStatusLabel _lblStatus = null!;
@@ -73,6 +81,12 @@ public class MainForm : Form
     private int _currentPage = 1;
     private int _totalPages = 1;
 
+    // Indices of the cell-painted columns in each grid (resolved once after
+    // the grids are built so the CellPainting handlers don't have to look the
+    // names up on every paint).
+    private int _colPaymentIndex = -1;
+    private int _colStatusIndex  = -1;
+
     public MainForm()
     {
         _apiService = new HotcakesApiService(Program.Settings);
@@ -83,53 +97,75 @@ public class MainForm : Form
 
     private void InitializeComponent()
     {
-        Text = "Hotcakes Rendelések";
-        Size = new Size(1150, 720);
-        MinimumSize = new Size(900, 600);
+        Text = "Pawpromise Rendelések";
+        Size = new Size(1180, 760);
+        MinimumSize = new Size(960, 640);
         StartPosition = FormStartPosition.CenterScreen;
-        Font = new Font("Segoe UI", 9f);
+        Font = Theme.BodyFont;
+        BackColor = Theme.PageBg;
 
-        BuildSplitContainer();
+        // Docking is processed in REVERSE Z-order, so we add bottom-most things
+        // first and top-most last. End result, top-down: header bar, toolbar,
+        // body, status strip.
         BuildStatusStrip();
-        BuildTopPanel();
+        BuildBody();
+        BuildToolbar();
+        BuildHeaderBar();
 
         Load += async (_, _) => await LoadOrdersAsync();
     }
 
     // ── UI Construction ──────────────────────────────────────────────────────
 
-    private void BuildTopPanel()
+    private void BuildHeaderBar()
     {
-        _topPanel = new Panel
+        // The wine bar is now visual-only — branding and the decorative admin
+        // avatar. Action buttons live on the toolbar below where ghost buttons
+        // can read clearly against the cream page background.
+        _headerBar = new AppHeaderBar { Title = "Pawpromise Rendelések" };
+        Controls.Add(_headerBar);
+    }
+
+    /// <summary>
+    /// Toolbar row sitting between the wine header bar and the body cards.
+    /// Holds the API URL display, mock-mode badge, and the Refresh / API
+    /// settings ghost buttons. Cream background so the buttons read properly.
+    /// </summary>
+    private void BuildToolbar()
+    {
+        var toolbar = new Panel
         {
             Dock = DockStyle.Top,
-            Height = 48,
-            BackColor = Color.FromArgb(235, 240, 248),
-            Padding = new Padding(8, 0, 8, 0)
+            Height = 52,
+            BackColor = Theme.PageBg,
+            Padding = new Padding(20, 8, 20, 8)
         };
 
         _lblApiUrl = new Label
         {
             Text = $"API: {Program.Settings.Hotcakes.BaseUrl.TrimEnd('/')}/{Program.Settings.Hotcakes.ApiBasePath.Trim('/')}",
             AutoSize = true,
-            Font = new Font("Segoe UI", 8f),
-            ForeColor = Color.FromArgb(60, 60, 120),
-            Location = new Point(8, 8)
+            Font = Theme.SmallFont,
+            ForeColor = Theme.TextSecondary,
+            BackColor = Color.Transparent,
+            Location = new Point(20, 11),
+            MaximumSize = new Size(500, 0)
         };
-
         _lblMockBadge = new Label
         {
-            Text = Program.Settings.UseMockData ? "⚠ MOCK MÓD AKTÍV" : "",
-            ForeColor = Color.DarkOrange,
-            Font = new Font("Segoe UI", 8f, FontStyle.Bold),
+            Text = Program.Settings.UseMockData ? "MOCK MÓD AKTÍV" : "",
+            ForeColor = Color.FromArgb(192, 110, 40),
+            Font = Theme.SmallBoldFont,
+            BackColor = Color.Transparent,
             AutoSize = true,
-            Location = new Point(8, 28)
+            Location = new Point(20, 27)
         };
 
-        _btnRefresh = new Button
+        _btnRefresh = new ModernButton
         {
-            Text = "Rendelések frissítése",
-            Size = new Size(175, 30),
+            Text = "Frissítés",
+            Style = ModernButton.ButtonStyle.Ghost,
+            Size = new Size(110, 34),
             Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
         _btnRefresh.Click += async (_, _) => await LoadOrdersAsync();
@@ -137,92 +173,143 @@ public class MainForm : Form
         // Discoverable in-app way to update the API URL / key. Without this the
         // user would have to delete bin\...\apisettings.json by hand to force the
         // settings form to reappear (because that file overrides appsettings.json).
-        _btnApiSettings = new Button
+        _btnApiSettings = new ModernButton
         {
-            Text = "⚙ API beállítások",
-            Size = new Size(150, 30),
+            Text = "API beállítások",
+            Style = ModernButton.ButtonStyle.Ghost,
+            Size = new Size(150, 34),
             Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
         _btnApiSettings.Click += async (_, _) => await OpenApiSettingsAsync();
 
-        _topPanel.Controls.AddRange(new Control[] { _lblApiUrl, _lblMockBadge, _btnApiSettings, _btnRefresh });
-        PositionTopRightButtons();
-        _topPanel.Resize += (_, _) => PositionTopRightButtons();
-        Controls.Add(_topPanel);
-    }
+        toolbar.Controls.Add(_lblApiUrl);
+        toolbar.Controls.Add(_lblMockBadge);
+        toolbar.Controls.Add(_btnRefresh);
+        toolbar.Controls.Add(_btnApiSettings);
 
-    private void PositionTopRightButtons()
-    {
-        _btnRefresh.Location     = new Point(_topPanel.Width - _btnRefresh.Width - 8, 9);
-        _btnApiSettings.Location = new Point(_btnRefresh.Left - _btnApiSettings.Width - 6, 9);
+        // Pin the buttons to the right edge whenever the toolbar resizes.
+        void PositionRightButtons()
+        {
+            _btnRefresh.Location     = new Point(toolbar.Width - 20 - _btnRefresh.Width, 9);
+            _btnApiSettings.Location = new Point(_btnRefresh.Left - 8 - _btnApiSettings.Width, 9);
+        }
+        PositionRightButtons();
+        toolbar.Resize += (_, _) => PositionRightButtons();
+
+        Controls.Add(toolbar);
     }
 
     private void BuildStatusStrip()
     {
-        _statusStrip = new StatusStrip { Dock = DockStyle.Bottom };
-        _lblStatus = new ToolStripStatusLabel("Kész.") { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
+        _statusStrip = new StatusStrip
+        {
+            Dock = DockStyle.Bottom,
+            BackColor = Theme.CardBg,
+            SizingGrip = false,
+            Padding = new Padding(8, 0, 8, 0)
+        };
+        _lblStatus = new ToolStripStatusLabel("Kész.")
+        {
+            Spring = true,
+            TextAlign = ContentAlignment.MiddleLeft,
+            ForeColor = Theme.TextSecondary,
+            Font = Theme.SmallFont
+        };
         _statusStrip.Items.Add(_lblStatus);
         Controls.Add(_statusStrip);
     }
 
-    private void BuildSplitContainer()
+    /// <summary>
+    /// Two stacked cards (orders / lines) plus an action button strip — laid out
+    /// with a TableLayoutPanel so the cards re-flow nicely when the form resizes.
+    /// </summary>
+    private void BuildBody()
     {
-        var split = new SplitContainer
+        var bodyHost = new Panel
         {
             Dock = DockStyle.Fill,
-            Orientation = Orientation.Horizontal,
-            SplitterDistance = 340,
-            Panel1MinSize = 160,
-            Panel2MinSize = 130
+            BackColor = Theme.PageBg,
+            Padding = new Padding(20, 16, 20, 12)
         };
 
-        // ── Top panel: orders grid + search + pager ─────────────────────────
-        _grpOrders = new GroupBox { Text = "Rendelések", Dock = DockStyle.Fill, Padding = new Padding(6) };
+        var bodyLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            BackColor = Color.Transparent
+        };
+        bodyLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        bodyLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 60f));
+        bodyLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 40f));
+        bodyLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 64f));
+
+        // ── Orders card ─────────────────────────────────────────────────────
+        _grpOrders = new CardPanel { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 12) };
+        _ordersHeader = new SectionHeader { Title = "RENDELÉSEK", Hint = "" };
         _dgvOrders = CreateOrdersGrid();
         _searchPanel = CreateSearchPanel();
         _pagerPanel  = CreatePagerPanel();
 
-        // Add Fill first so Top/Bottom docks carve out space from the edges.
+        // Add Fill (grid) first so docked Top/Bottom carve out from the edges.
         _grpOrders.Controls.Add(_dgvOrders);
         _grpOrders.Controls.Add(_pagerPanel);
         _grpOrders.Controls.Add(_searchPanel);
-        split.Panel1.Controls.Add(_grpOrders);
+        _grpOrders.Controls.Add(_ordersHeader);
 
-        // ── Bottom panel: items section + action buttons ────────────────────
-        var bottomLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            RowCount = 2,
-            ColumnCount = 1
-        };
-        bottomLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
-        bottomLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46f));
+        bodyLayout.Controls.Add(_grpOrders, 0, 0);
 
-        _grpLines = new GroupBox { Text = "Rendelés tételei", Dock = DockStyle.Fill, Padding = new Padding(6) };
+        // ── Lines card ──────────────────────────────────────────────────────
+        _grpLines = new CardPanel { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 12) };
+        _linesHeader = new SectionHeader { Title = "RENDELÉS TÉTELEI", Hint = "" };
         _dgvLines = CreateLinesGrid();
-        _grpLines.Controls.Add(_dgvLines);
 
         _lblNoItemsInfo = new Label
         {
             Text = "Válasszon ki egy rendelést a listából.",
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = Color.FromArgb(100, 100, 120),
-            Font = new Font("Segoe UI", 9f),
+            ForeColor = Theme.TextSecondary,
+            Font = Theme.BodyFont,
+            BackColor = Color.Transparent,
             Visible = true
         };
+        _grpLines.Controls.Add(_dgvLines);
         _grpLines.Controls.Add(_lblNoItemsInfo);
+        _grpLines.Controls.Add(_linesHeader);
         _dgvLines.Visible = false;
 
-        var btnPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(4, 6, 4, 4) };
-        _btnInvoice = new Button { Text = "Számla generálása", Location = new Point(4, 4),   Size = new Size(160, 32) };
-        _btnLabel   = new Button { Text = "Címke generálása",  Location = new Point(172, 4), Size = new Size(160, 32) };
+        bodyLayout.Controls.Add(_grpLines, 0, 1);
+
+        // ── Action button strip ─────────────────────────────────────────────
+        var btnPanel = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Color.Transparent,
+            Padding = new Padding(0, 14, 0, 6)
+        };
+
+        _btnInvoice = new ModernButton
+        {
+            Text = "Számla generálás",
+            Style = ModernButton.ButtonStyle.Primary,
+            Size = new Size(180, 40),
+            Location = new Point(0, 6)
+        };
+        _btnLabel = new ModernButton
+        {
+            Text = "Címke generálás",
+            Style = ModernButton.ButtonStyle.Primary,
+            Size = new Size(180, 40),
+            Location = new Point(192, 6)
+        };
         // Right-anchored "revert to Received" button. Only enabled when the currently
         // selected order is in the Complete state (see OnOrderSelectedAsync).
-        _btnRevertToReceived = new Button
+        _btnRevertToReceived = new ModernButton
         {
             Text = "Visszaállítás 'Received'-re",
-            Size = new Size(210, 32),
+            Style = ModernButton.ButtonStyle.Ghost,
+            Size = new Size(220, 40),
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
             Enabled = false
         };
@@ -234,34 +321,45 @@ public class MainForm : Form
         // Initial position + keep pinned to the right when the form resizes.
         void PositionRevertButton() =>
             _btnRevertToReceived.Location =
-                new Point(btnPanel.Width - _btnRevertToReceived.Width - 8, 4);
+                new Point(Math.Max(420, btnPanel.Width - _btnRevertToReceived.Width), 6);
         PositionRevertButton();
         btnPanel.Resize += (_, _) => PositionRevertButton();
 
-        bottomLayout.Controls.Add(_grpLines, 0, 0);
-        bottomLayout.Controls.Add(btnPanel,  0, 1);
-        split.Panel2.Controls.Add(bottomLayout);
+        bodyLayout.Controls.Add(btnPanel, 0, 2);
 
-        Controls.Add(split);
+        bodyHost.Controls.Add(bodyLayout);
+        Controls.Add(bodyHost);
     }
 
-    /// <summary>Search bar docked to the top of the orders GroupBox.</summary>
+    /// <summary>Search bar docked to the top of the orders card (under the section header).</summary>
     private Panel CreateSearchPanel()
     {
-        var panel = new Panel { Dock = DockStyle.Top, Height = 34, Padding = new Padding(2, 4, 2, 4) };
+        var panel = new Panel
+        {
+            Dock = DockStyle.Top,
+            Height = 38,
+            Padding = new Padding(0, 4, 0, 6),
+            BackColor = Color.Transparent
+        };
 
         _lblSearch = new Label
         {
             Text = "Keresés:",
             AutoSize = true,
-            Location = new Point(2, 8),
-            Font = new Font("Segoe UI", 9f)
+            Location = new Point(0, 9),
+            Font = Theme.BodyFont,
+            ForeColor = Theme.TextSecondary,
+            BackColor = Color.Transparent
         };
         _txtSearch = new TextBox
         {
-            Location = new Point(70, 5),
+            Location = new Point(60, 5),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
-            Width = 400,
+            Width = 420,
+            Font = Theme.BodyFont,
+            BorderStyle = BorderStyle.FixedSingle,
+            BackColor = Theme.CardBg,
+            ForeColor = Theme.TextPrimary,
             PlaceholderText = "Szűrés — rendelésszám, vevő neve vagy email"
         };
         _txtSearch.TextChanged += (_, _) => ApplySearchAndPaging(resetPage: true);
@@ -270,21 +368,28 @@ public class MainForm : Form
         panel.Controls.Add(_txtSearch);
         panel.Resize += (_, _) =>
         {
-            _txtSearch.Width = Math.Max(100, panel.Width - _txtSearch.Left - 8);
+            _txtSearch.Width = Math.Max(120, panel.Width - _txtSearch.Left - 4);
         };
         return panel;
     }
 
-    /// <summary>Pagination bar docked to the bottom of the orders GroupBox.</summary>
+    /// <summary>Pagination bar docked to the bottom of the orders card.</summary>
     private Panel CreatePagerPanel()
     {
-        var panel = new Panel { Dock = DockStyle.Bottom, Height = 36, Padding = new Padding(2, 4, 2, 4) };
-
-        _btnPrevPage = new Button
+        var panel = new Panel
         {
-            Text = "◀ Előző",
-            Size = new Size(90, 26),
-            Location = new Point(2, 4),
+            Dock = DockStyle.Bottom,
+            Height = 44,
+            Padding = new Padding(0, 6, 0, 4),
+            BackColor = Color.Transparent
+        };
+
+        _btnPrevPage = new ModernButton
+        {
+            Text = "Előző",
+            Style = ModernButton.ButtonStyle.Ghost,
+            Size = new Size(90, 32),
+            Location = new Point(0, 6),
             Enabled = false
         };
         _btnPrevPage.Click += (_, _) => ChangePage(-1);
@@ -292,16 +397,19 @@ public class MainForm : Form
         _lblPageIndicator = new Label
         {
             AutoSize = true,
-            Location = new Point(110, 9),
-            Font = new Font("Segoe UI", 9f),
+            Location = new Point(112, 13),
+            Font = Theme.BodyFont,
+            ForeColor = Theme.TextSecondary,
+            BackColor = Color.Transparent,
             Text = "Oldal 0 / 0"
         };
 
-        _btnNextPage = new Button
+        _btnNextPage = new ModernButton
         {
-            Text = "Következő ▶",
-            Size = new Size(110, 26),
-            Location = new Point(340, 4),
+            Text = "Következő",
+            Style = ModernButton.ButtonStyle.Ghost,
+            Size = new Size(110, 32),
+            Location = new Point(340, 6),
             Enabled = false
         };
         _btnNextPage.Click += (_, _) => ChangePage(+1);
@@ -314,35 +422,29 @@ public class MainForm : Form
 
     private DataGridView CreateOrdersGrid()
     {
-        var dgv = new DataGridView
-        {
-            Dock = DockStyle.Fill,
-            ReadOnly = true,
-            AutoGenerateColumns = false,
-            AllowUserToAddRows = false,
-            AllowUserToDeleteRows = false,
-            AllowUserToResizeRows = false,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            MultiSelect = false,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize,
-            RowHeadersVisible = false,
-            BackgroundColor = Color.White,
-            BorderStyle = BorderStyle.None,
-            GridColor = Color.FromArgb(220, 225, 235)
-        };
+        var dgv = BuildStyledGrid();
 
         dgv.Columns.AddRange(new DataGridViewColumn[]
         {
             new DataGridViewTextBoxColumn
             {
                 Name = "colOrderNum", HeaderText = "Rendelésszám",
-                DataPropertyName = nameof(OrderViewModel.OrderNumber), FillWeight = 11
+                DataPropertyName = nameof(OrderViewModel.OrderNumber), FillWeight = 11,
+                DefaultCellStyle = new DataGridViewCellStyle
+                {
+                    Font = Theme.BodyBoldFont,
+                    ForeColor = Theme.TextPrimary,
+                    BackColor = Theme.CardBg,
+                    SelectionBackColor = Theme.GridSelectionBg,
+                    SelectionForeColor = Theme.GridSelectionText,
+                    Padding = new Padding(8, 0, 6, 0),
+                    Alignment = DataGridViewContentAlignment.MiddleLeft
+                }
             },
             new DataGridViewTextBoxColumn
             {
                 Name = "colCustomer", HeaderText = "Vevő neve",
-                DataPropertyName = nameof(OrderViewModel.CustomerName), FillWeight = 17
+                DataPropertyName = nameof(OrderViewModel.CustomerName), FillWeight = 16
             },
             new DataGridViewTextBoxColumn
             {
@@ -356,7 +458,10 @@ public class MainForm : Form
                 DefaultCellStyle = new DataGridViewCellStyle
                 {
                     Alignment = DataGridViewContentAlignment.MiddleRight,
-                    Format = "N0"
+                    Format = "N0",
+                    Font = Theme.BodyBoldFont,
+                    ForeColor = Theme.TextPrimary,
+                    Padding = new Padding(4, 0, 8, 0)
                 }
             },
             new DataGridViewTextBoxColumn
@@ -373,20 +478,112 @@ public class MainForm : Form
             {
                 Name = "colDate", HeaderText = "Rendelés dátuma",
                 DataPropertyName = nameof(OrderViewModel.OrderDate), FillWeight = 11,
-                DefaultCellStyle = new DataGridViewCellStyle { Format = "yyyy.MM.dd HH:mm" }
+                DefaultCellStyle = new DataGridViewCellStyle
+                {
+                    Format = "yyyy.MM.dd HH:mm",
+                    ForeColor = Theme.TextSecondary,
+                    Padding = new Padding(8, 0, 6, 0)
+                }
             },
             new DataGridViewTextBoxColumn
             {
                 Name = "colStatus", HeaderText = "Állapot",
-                DataPropertyName = nameof(OrderViewModel.Status), FillWeight = 9
+                DataPropertyName = nameof(OrderViewModel.Status), FillWeight = 12
             }
         });
+
+        _colPaymentIndex = dgv.Columns["colPayment"]!.Index;
+        _colStatusIndex  = dgv.Columns["colStatus"]!.Index;
+
+        // Custom-painted cells for the two visual statuses.
+        dgv.CellPainting += (_, e) =>
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+            if (e.ColumnIndex == _colPaymentIndex)
+                StatusCellPainter.PaintPaymentStatus(e, e.Value?.ToString() ?? "");
+            else if (e.ColumnIndex == _colStatusIndex)
+                StatusCellPainter.PaintStatusPill(e, e.Value?.ToString() ?? "");
+        };
 
         dgv.SelectionChanged += async (_, _) => await OnOrderSelectedAsync();
         return dgv;
     }
 
     private DataGridView CreateLinesGrid()
+    {
+        var dgv = BuildStyledGrid();
+
+        dgv.Columns.AddRange(new DataGridViewColumn[]
+        {
+            new DataGridViewTextBoxColumn
+            {
+                Name = "colProductName", HeaderText = "Termék neve",
+                DataPropertyName = nameof(OrderItemViewModel.ProductName), FillWeight = 30,
+                DefaultCellStyle = new DataGridViewCellStyle
+                {
+                    Font = Theme.BodyBoldFont,
+                    ForeColor = Theme.TextPrimary,
+                    Padding = new Padding(8, 0, 6, 0),
+                    Alignment = DataGridViewContentAlignment.MiddleLeft
+                }
+            },
+            new DataGridViewTextBoxColumn
+            {
+                Name = "colSku", HeaderText = "SKU",
+                DataPropertyName = nameof(OrderItemViewModel.Sku), FillWeight = 13,
+                DefaultCellStyle = new DataGridViewCellStyle
+                {
+                    Font = new Font("Cascadia Mono", 8.5f),
+                    ForeColor = Theme.TextSecondary,
+                    Padding = new Padding(8, 0, 6, 0)
+                }
+            },
+            new DataGridViewTextBoxColumn
+            {
+                Name = "colOption", HeaderText = "Variáns",
+                DataPropertyName = nameof(OrderItemViewModel.Option), FillWeight = 22
+            },
+            new DataGridViewTextBoxColumn
+            {
+                Name = "colQty", HeaderText = "Mennyiség",
+                DataPropertyName = nameof(OrderItemViewModel.Quantity), FillWeight = 7,
+                DefaultCellStyle = new DataGridViewCellStyle
+                {
+                    Alignment = DataGridViewContentAlignment.MiddleLeft,
+                    Padding = new Padding(8, 0, 6, 0)
+                }
+            },
+            new DataGridViewTextBoxColumn
+            {
+                Name = "colUnitPrice", HeaderText = "Egységár (Ft)",
+                DataPropertyName = nameof(OrderItemViewModel.UnitPrice), FillWeight = 13,
+                DefaultCellStyle = new DataGridViewCellStyle
+                {
+                    Alignment = DataGridViewContentAlignment.MiddleRight,
+                    Format = "N0",
+                    Padding = new Padding(4, 0, 8, 0)
+                }
+            },
+            new DataGridViewTextBoxColumn
+            {
+                Name = "colLineTotal", HeaderText = "Összeg (Ft)",
+                DataPropertyName = nameof(OrderItemViewModel.LineTotal), FillWeight = 13,
+                DefaultCellStyle = new DataGridViewCellStyle
+                {
+                    Alignment = DataGridViewContentAlignment.MiddleRight,
+                    Format = "N0",
+                    Font = Theme.BodyBoldFont,
+                    ForeColor = Theme.TextPrimary,
+                    Padding = new Padding(4, 0, 8, 0)
+                }
+            }
+        });
+
+        return dgv;
+    }
+
+    /// <summary>Shared base styling for both the orders and lines grids.</summary>
+    private static DataGridView BuildStyledGrid()
     {
         var dgv = new DataGridView
         {
@@ -399,49 +596,47 @@ public class MainForm : Form
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             MultiSelect = false,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize,
+            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing,
+            ColumnHeadersHeight = 36,
             RowHeadersVisible = false,
-            BackgroundColor = Color.White,
+            EnableHeadersVisualStyles = false,
+            BackgroundColor = Theme.CardBg,
             BorderStyle = BorderStyle.None,
-            GridColor = Color.FromArgb(220, 225, 235)
+            GridColor = Theme.GridLine,
+            CellBorderStyle = DataGridViewCellBorderStyle.None,
+            RowTemplate = { Height = 38 },
+            DefaultCellStyle = new DataGridViewCellStyle
+            {
+                BackColor = Theme.CardBg,
+                ForeColor = Theme.TextPrimary,
+                SelectionBackColor = Theme.GridSelectionBg,
+                SelectionForeColor = Theme.GridSelectionText,
+                Font = Theme.CellFont,
+                Padding = new Padding(8, 0, 6, 0),
+                Alignment = DataGridViewContentAlignment.MiddleLeft,
+                WrapMode = DataGridViewTriState.False
+            }
         };
 
-        dgv.Columns.AddRange(new DataGridViewColumn[]
+        dgv.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
         {
-            new DataGridViewTextBoxColumn
-            {
-                Name = "colProductName", HeaderText = "Termék neve",
-                DataPropertyName = nameof(OrderItemViewModel.ProductName), FillWeight = 30
-            },
-            new DataGridViewTextBoxColumn
-            {
-                Name = "colSku", HeaderText = "SKU",
-                DataPropertyName = nameof(OrderItemViewModel.Sku), FillWeight = 13
-            },
-            new DataGridViewTextBoxColumn
-            {
-                Name = "colOption", HeaderText = "Variáns / opció",
-                DataPropertyName = nameof(OrderItemViewModel.Option), FillWeight = 22
-            },
-            new DataGridViewTextBoxColumn
-            {
-                Name = "colQty", HeaderText = "Mennyiség",
-                DataPropertyName = nameof(OrderItemViewModel.Quantity), FillWeight = 7,
-                DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight }
-            },
-            new DataGridViewTextBoxColumn
-            {
-                Name = "colUnitPrice", HeaderText = "Egységár (Ft)",
-                DataPropertyName = nameof(OrderItemViewModel.UnitPrice), FillWeight = 13,
-                DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight, Format = "N0" }
-            },
-            new DataGridViewTextBoxColumn
-            {
-                Name = "colLineTotal", HeaderText = "Összeg (Ft)",
-                DataPropertyName = nameof(OrderItemViewModel.LineTotal), FillWeight = 13,
-                DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight, Format = "N0" }
-            }
-        });
+            BackColor = Theme.GridHeaderBg,
+            ForeColor = Theme.GridHeaderText,
+            SelectionBackColor = Theme.GridHeaderBg,
+            SelectionForeColor = Theme.GridHeaderText,
+            Font = Theme.GridHeaderFont,
+            Alignment = DataGridViewContentAlignment.MiddleLeft,
+            Padding = new Padding(8, 0, 6, 0),
+            WrapMode = DataGridViewTriState.False
+        };
+
+        // Bottom hairline for each row, mirroring the reference design's table style.
+        dgv.RowPostPaint += (_, e) =>
+        {
+            using var pen = new Pen(Theme.GridLine);
+            int y = e.RowBounds.Bottom - 1;
+            e.Graphics.DrawLine(pen, e.RowBounds.Left, y, e.RowBounds.Right, y);
+        };
 
         return dgv;
     }
@@ -546,6 +741,10 @@ public class MainForm : Form
             : $"Oldal {_currentPage} / {_totalPages}  ({_filteredOrders.Count} rendelés)";
         _btnPrevPage.Enabled = _currentPage > 1;
         _btnNextPage.Enabled = _currentPage < _totalPages;
+
+        _ordersHeader.Hint = _filteredOrders.Count == 0
+            ? "Nincs találat"
+            : $"{_filteredOrders.Count} db rendelés";
     }
 
     private void ChangePage(int delta)
@@ -568,6 +767,7 @@ public class MainForm : Form
         _dgvLines.Visible = false;
         _lblNoItemsInfo.Text = $"Tételek betöltése: {vm.OrderNumber}...";
         _lblNoItemsInfo.Visible = true;
+        _linesHeader.Hint = vm.OrderNumber ?? "";
 
         SetStatus($"Kiválasztva: {vm.OrderNumber} — tételek betöltése...");
 

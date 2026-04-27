@@ -1,6 +1,7 @@
 using HotcakesWinFormsApp.Configuration;
 using HotcakesWinFormsApp.Helpers;
 using HotcakesWinFormsApp.Services;
+using HotcakesWinFormsApp.UI;
 
 namespace HotcakesWinFormsApp.Forms;
 
@@ -21,12 +22,14 @@ namespace HotcakesWinFormsApp.Forms;
 ///     the global <c>Program.Settings.Hotcakes</c>, and closes with
 ///     DialogResult.OK so the caller can proceed to MainForm.
 ///
-/// This form is shown automatically on startup when no API key has been saved
-/// yet, and can also be reopened later by the user (if a menu entry is added).
+/// Visuals match MainForm — wine header bar, white card body, rounded buttons.
 /// </summary>
 public class ApiSettingsForm : Form
 {
     // ── UI ───────────────────────────────────────────────────────────────────
+    private AppHeaderBar _header = null!;
+    private CardPanel _card = null!;
+
     private Label _lblTitle = null!;
     private Label _lblSubtitle = null!;
 
@@ -39,8 +42,8 @@ public class ApiSettingsForm : Form
     private Label _lblApiKey = null!;
     private TextBox _txtApiKey = null!;
 
-    private Button _btnTest = null!;
-    private Button _btnSave = null!;
+    private ModernButton _btnTest = null!;
+    private ModernButton _btnSave = null!;
     private Label _lblStatus = null!;
 
     // ── State ────────────────────────────────────────────────────────────────
@@ -65,73 +68,90 @@ public class ApiSettingsForm : Form
     private void InitializeComponent()
     {
         Text = "API kapcsolat beállítása";
-        ClientSize = new Size(480, 360);
-        MinimumSize = new Size(480, 360);
-        MaximumSize = new Size(640, 420);
+        ClientSize = new Size(560, 540);
+        MinimumSize = new Size(560, 540);
+        MaximumSize = new Size(720, 600);
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
-        Font = new Font("Segoe UI", 9f);
+        Font = Theme.BodyFont;
+        BackColor = Theme.PageBg;
 
-        // ── Title / subtitle ──────────────────────────────────────────────
+        // ── Header bar ────────────────────────────────────────────────────
+        _header = new AppHeaderBar
+        {
+            Title = "PAWPROMISE BEÁLLÍTÁSOK",
+            Subtitle = "Hotcakes REST API kapcsolat"
+        };
+        Controls.Add(_header);
+
+        // ── Card body ─────────────────────────────────────────────────────
+        var bodyHost = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Theme.PageBg,
+            Padding = new Padding(24, 20, 24, 20)
+        };
+
+        _card = new CardPanel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(24, 22, 24, 22)
+        };
+
         _lblTitle = new Label
         {
             Text = "Hotcakes API beállítások",
-            Font = new Font("Segoe UI", 13f, FontStyle.Bold),
+            Font = new Font("Segoe UI Semibold", 14f, FontStyle.Bold),
+            ForeColor = Theme.TextPrimary,
+            BackColor = Color.Transparent,
             AutoSize = true,
-            Location = new Point(20, 15)
+            Location = new Point(2, 4)
         };
         _lblSubtitle = new Label
         {
             Text = "Adja meg a Hotcakes Commerce REST API elérési adatait.",
-            Font = new Font("Segoe UI", 8.5f),
-            ForeColor = Color.FromArgb(90, 90, 110),
+            Font = Theme.SmallFont,
+            ForeColor = Theme.TextSecondary,
+            BackColor = Color.Transparent,
             AutoSize = true,
-            Location = new Point(20, 42)
+            Location = new Point(2, 32)
         };
+
+        // Field widths are tracked via Anchor so the form scales nicely if
+        // the user resizes within the allowed range.
+        const int fieldLeft = 2;
+        const int fieldWidth = 488;
 
         // ── Base URL field ────────────────────────────────────────────────
-        _lblBaseUrl = new Label { Text = "Alap URL:", AutoSize = true, Location = new Point(20, 80) };
-        _txtBaseUrl = new TextBox
-        {
-            Location = new Point(20, 100),
-            Width = 440,
-            Text = _store.BaseUrl
-        };
+        _lblBaseUrl = MakeFieldLabel("Alap URL",  new Point(fieldLeft, 70));
+        _txtBaseUrl = MakeFieldTextBox(new Point(fieldLeft, 92), fieldWidth, _store.BaseUrl);
 
         // ── API path field ────────────────────────────────────────────────
-        _lblApiPath = new Label { Text = "API elérési út:", AutoSize = true, Location = new Point(20, 135) };
-        _txtApiPath = new TextBox
-        {
-            Location = new Point(20, 155),
-            Width = 440,
-            Text = _store.ApiBasePath
-        };
+        _lblApiPath = MakeFieldLabel("API elérési út", new Point(fieldLeft, 132));
+        _txtApiPath = MakeFieldTextBox(new Point(fieldLeft, 154), fieldWidth, _store.ApiBasePath);
 
         // ── API key field ─────────────────────────────────────────────────
-        _lblApiKey = new Label { Text = "API kulcs:", AutoSize = true, Location = new Point(20, 190) };
-        _txtApiKey = new TextBox
-        {
-            Location = new Point(20, 210),
-            Width = 440,
-            Text = _store.ApiKey,
-            UseSystemPasswordChar = true  // masked — treat it like a secret
-        };
+        _lblApiKey = MakeFieldLabel("API kulcs", new Point(fieldLeft, 194));
+        _txtApiKey = MakeFieldTextBox(new Point(fieldLeft, 216), fieldWidth, _store.ApiKey);
+        _txtApiKey.UseSystemPasswordChar = true;  // masked — treat it like a secret
 
         // ── Buttons ───────────────────────────────────────────────────────
-        _btnTest = new Button
+        _btnTest = new ModernButton
         {
             Text = "Kapcsolat tesztelése",
-            Location = new Point(20, 255),
-            Size = new Size(180, 32)
+            Style = ModernButton.ButtonStyle.Ghost,
+            Size = new Size(200, 40),
+            Location = new Point(fieldLeft, 268)
         };
         _btnTest.Click += async (_, _) => await TestConnectionAsync();
 
-        _btnSave = new Button
+        _btnSave = new ModernButton
         {
             Text = "Mentés és folytatás",
-            Location = new Point(280, 255),
-            Size = new Size(180, 32)
+            Style = ModernButton.ButtonStyle.Primary,
+            Size = new Size(200, 40),
+            Location = new Point(fieldLeft + fieldWidth - 200, 268)
         };
         _btnSave.Click += (_, _) => SaveAndClose();
 
@@ -139,13 +159,14 @@ public class ApiSettingsForm : Form
         _lblStatus = new Label
         {
             AutoSize = false,
-            Location = new Point(20, 300),
-            Size = new Size(440, 50),
-            ForeColor = Color.FromArgb(60, 60, 90),
-            Font = new Font("Segoe UI", 8.5f)
+            Location = new Point(fieldLeft, 322),
+            Size = new Size(fieldWidth, 60),
+            ForeColor = Theme.TextSecondary,
+            BackColor = Color.Transparent,
+            Font = Theme.SmallFont
         };
 
-        Controls.AddRange(new Control[]
+        _card.Controls.AddRange(new Control[]
         {
             _lblTitle, _lblSubtitle,
             _lblBaseUrl, _txtBaseUrl,
@@ -154,12 +175,38 @@ public class ApiSettingsForm : Form
             _btnTest, _btnSave, _lblStatus
         });
 
+        bodyHost.Controls.Add(_card);
+        Controls.Add(bodyHost);
+
         // Pressing Enter in the API key field triggers save
         _txtApiKey.KeyDown += (_, e) =>
         {
             if (e.KeyCode == Keys.Enter) SaveAndClose();
         };
+
+        AcceptButton = _btnSave;
     }
+
+    private static Label MakeFieldLabel(string text, Point location) => new()
+    {
+        Text = text.ToUpperInvariant(),
+        AutoSize = true,
+        Location = location,
+        Font = new Font("Segoe UI Semibold", 8.5f, FontStyle.Bold),
+        ForeColor = Theme.TextSecondary,
+        BackColor = Color.Transparent
+    };
+
+    private static TextBox MakeFieldTextBox(Point location, int width, string value) => new()
+    {
+        Location = location,
+        Width = width,
+        Text = value,
+        Font = Theme.BodyFont,
+        BorderStyle = BorderStyle.FixedSingle,
+        BackColor = Theme.CardBg,
+        ForeColor = Theme.TextPrimary
+    };
 
     // ──────────────────────────────────────────────────────────────────────
     // Actions
@@ -175,7 +222,7 @@ public class ApiSettingsForm : Form
 
         _btnTest.Enabled = false;
         _btnSave.Enabled = false;
-        SetStatus("Kapcsolat tesztelése folyamatban...", Color.FromArgb(60, 60, 90));
+        SetStatus("Kapcsolat tesztelése folyamatban...", Theme.TextSecondary);
 
         try
         {
@@ -199,7 +246,7 @@ public class ApiSettingsForm : Form
                 SetStatus($"Sikertelen kapcsolat: {error}", Color.Crimson);
             else
                 SetStatus($"Sikeres kapcsolat. Rendelések elérhetők ({orders.Count} minta válaszban).",
-                          Color.DarkGreen);
+                          Color.FromArgb(60, 130, 80));
         }
         catch (Exception ex)
         {

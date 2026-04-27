@@ -1,3 +1,5 @@
+using HotcakesWinFormsApp.UI;
+
 namespace HotcakesWinFormsApp.Forms;
 
 /// <summary>
@@ -8,6 +10,8 @@ namespace HotcakesWinFormsApp.Forms;
 /// can copy the trace into a bug report. Also reachable on success via the
 /// "Részletek" (Details) button on the success message — useful for
 /// diagnosing edge cases while we're still confirming the endpoint.
+///
+/// Visuals match the Pawpromise palette used elsewhere in the app.
 /// </summary>
 public class StatusUpdateLogForm : Form
 {
@@ -15,9 +19,30 @@ public class StatusUpdateLogForm : Form
     {
         Text = title;
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(720, 480);
-        MinimumSize = new Size(560, 360);
-        Font = new Font("Segoe UI", 9f);
+        ClientSize = new Size(780, 540);
+        MinimumSize = new Size(620, 420);
+        Font = Theme.BodyFont;
+        BackColor = Theme.PageBg;
+
+        var header = new AppHeaderBar
+        {
+            Title = "PAWPROMISE NAPLÓ",
+            Subtitle = title
+        };
+        Controls.Add(header);
+
+        var bodyHost = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Theme.PageBg,
+            Padding = new Padding(20, 16, 20, 16)
+        };
+
+        var card = new CardPanel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(2)
+        };
 
         var box = new TextBox
         {
@@ -25,17 +50,30 @@ public class StatusUpdateLogForm : Form
             ReadOnly = true,
             ScrollBars = ScrollBars.Both,
             WordWrap = false,
-            Font = new Font("Consolas", 9f),
+            Font = new Font("Cascadia Mono", 9f),
+            ForeColor = Theme.TextPrimary,
+            BackColor = Theme.CardBg,
+            BorderStyle = BorderStyle.None,
             Dock = DockStyle.Fill,
             Text = log
         };
+        card.Controls.Add(box);
+        bodyHost.Controls.Add(card);
+        Controls.Add(bodyHost);
 
-        var bottom = new Panel { Dock = DockStyle.Bottom, Height = 44, Padding = new Padding(8) };
-        var btnCopy = new Button
+        var bottom = new Panel
+        {
+            Dock = DockStyle.Bottom,
+            Height = 60,
+            BackColor = Theme.PageBg,
+            Padding = new Padding(20, 10, 20, 14)
+        };
+        var btnCopy = new ModernButton
         {
             Text = "Másolás vágólapra",
-            Width = 160,
-            Height = 28,
+            Style = ModernButton.ButtonStyle.Ghost,
+            Width = 180,
+            Height = 36,
             Dock = DockStyle.Right
         };
         btnCopy.Click += (_, _) =>
@@ -44,19 +82,25 @@ public class StatusUpdateLogForm : Form
             catch { /* clipboard may be momentarily unavailable — ignore */ }
         };
 
-        var btnClose = new Button
+        var spacer = new Panel { Dock = DockStyle.Right, Width = 12, BackColor = Color.Transparent };
+
+        var btnClose = new ModernButton
         {
             Text = "Bezárás",
-            Width = 100,
-            Height = 28,
+            Style = ModernButton.ButtonStyle.Primary,
+            Width = 130,
+            Height = 36,
             Dock = DockStyle.Right,
             DialogResult = DialogResult.OK
         };
 
-        bottom.Controls.Add(btnClose);
+        // Order matters for Dock.Right: last-added is processed first and ends
+        // up RIGHTMOST. We want [Másolás] [Bezárás] left-to-right, so add Copy
+        // first and Close last.
         bottom.Controls.Add(btnCopy);
+        bottom.Controls.Add(spacer);
+        bottom.Controls.Add(btnClose);
 
-        Controls.Add(box);
         Controls.Add(bottom);
 
         AcceptButton = btnClose;
