@@ -19,5 +19,6 @@ namespace DNNHello.DNNHello.Models
         public DateTime LastModifiedOnDate { get; set; }
         public bool IsGlobal { get; set; }
         public bool IsUserApproved { get; set; }
+        public bool IsVisibleInGlobalGallery => IsGlobal && IsUserApproved;
     }
 }
