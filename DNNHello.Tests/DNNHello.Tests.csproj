@@ -52,6 +52,7 @@
     <Compile Include="Helpers\AuthorizationHelperTests.cs" />
     <Compile Include="Models\FileNameHelperTests.cs" />
     <Compile Include="Models\ItemTests.cs" />
+    <Compile Include="Models\OwnershipCheckerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
