@@ -6,22 +6,24 @@ using System.Text.RegularExpressions;
 namespace HotcakesWinFormsApp.Helpers;
 
 /// <summary>
-/// Deserializes the old ASP.NET/WCF JSON date format used by Hotcakes Commerce:
+/// A Hotcakes Commerce által használt régi ASP.NET / WCF JSON dátum-formátumot
+/// deszerializálja:
 ///
-///   "/Date(1772190902103)/"          → UTC DateTime from Unix milliseconds
-///   "/Date(1772190902103+0200)/"     → same (timezone offset captured but not applied;
-///                                       the ms value is already absolute)
-///   "/Date(-62135596800000)/"        → very old date (before epoch) — handled correctly
+///   "/Date(1772190902103)/"          → UTC DateTime Unix milliszekundumból
+///   "/Date(1772190902103+0200)/"     → ugyanaz (az időzóna offset rögzítve, de
+///                                       nincs alkalmazva; a ms érték már abszolút)
+///   "/Date(-62135596800000)/"        → nagyon régi dátum (epoch előtti) — kezelve
 ///   null / ""                        → DateTime.MinValue
-///   ISO 8601 string                  → parsed normally (fallback for re-serialized values)
+///   ISO 8601 karakterlánc            → normál módon parse-olva (visszaeső eset
+///                                       újra szerializált értékekhez)
 ///
-/// Usage:
-///   Register globally in JsonSerializerOptions.Converters, OR
-///   Apply per-property with [JsonConverter(typeof(DotNetJsonDateConverter))].
+/// Használat:
+///   Globális regisztráció a JsonSerializerOptions.Converters-ben, VAGY
+///   tulajdonságonkénti alkalmazás: [JsonConverter(typeof(DotNetJsonDateConverter))].
 /// </summary>
 public sealed class DotNetJsonDateConverter : JsonConverter<DateTime>
 {
-    // Matches /Date(milliseconds)/ with an optional ±HHMM timezone suffix
+    // /Date(milliseconds)/ formátumra illeszkedik, opcionális ±HHMM időzóna utótaggal
     private static readonly Regex Pattern =
         new(@"^/Date\((-?\d+)([+-]\d{4})?\)/$", RegexOptions.Compiled);
 
@@ -34,39 +36,40 @@ public sealed class DotNetJsonDateConverter : JsonConverter<DateTime>
         if (string.IsNullOrWhiteSpace(str))
             return DateTime.MinValue;
 
-        // Primary: /Date(ms)/ format
+        // Elsődleges: /Date(ms)/ formátum
         var match = Pattern.Match(str);
         if (match.Success && long.TryParse(match.Groups[1].Value, out var ms))
             return DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime;
 
-        // Fallback: ISO 8601 / RFC 3339 and other standard .NET date strings.
-        // This handles values that were re-serialized back to ISO format (e.g. in FromSummary).
+        // Visszaesés: ISO 8601 / RFC 3339 és más szabványos .NET dátum sztringek.
+        // Ez kezeli azokat az értékeket, amiket ISO formátumra szerializáltunk
+        // vissza (pl. a FromSummary-ben).
         if (DateTime.TryParse(str, null, DateTimeStyles.RoundtripKind, out var parsed))
             return parsed;
 
-        System.Diagnostics.Debug.WriteLine($"[DotNetJsonDateConverter] Could not parse date: '{str}'");
+        System.Diagnostics.Debug.WriteLine($"[DotNetJsonDateConverter] Nem sikerült értelmezni a dátumot: '{str}'");
         return DateTime.MinValue;
     }
 
     /// <summary>
-    /// Writes DateTimes as ISO 8601 ("o" round-trip format).
+    /// A DateTime-okat ISO 8601 ("o" round-trip) formátumban írja ki.
     ///
-    /// <para>Counter-intuitive but confirmed against the live API: the Hotcakes
-    /// Commerce REST endpoint <em>emits</em> dates in "/Date(ms)/" form on GET
-    /// responses, but its input model-binder only <em>accepts</em> ISO 8601 on
-    /// POST bodies. Sending "/Date(ms)/" back results in:
+    /// <para>Furcsa, de élő API-n megerősített tény: a Hotcakes Commerce REST
+    /// végpont GET válaszokon „/Date(ms)/" formában <em>küldi</em> a dátumokat,
+    /// de a POST body-k input model-binder-e <em>kizárólag</em> ISO 8601-et
+    /// fogad el. Ha „/Date(ms)/"-t küldünk vissza, a szerver így válaszol:
     /// <c>{"Code":"EXCEPTION","Description":"/Date(...) is not a valid value
     /// for DateTime."}</c></para>
     ///
-    /// <para>So:</para>
+    /// <para>Tehát:</para>
     /// <list type="bullet">
-    ///   <item>Read accepts both "/Date(ms)/" (primary) and ISO 8601 (fallback).</item>
-    ///   <item>Write always emits ISO 8601 — that's what the server can parse.</item>
+    ///   <item>Read elfogad „/Date(ms)/" (elsődleges) és ISO 8601 (fallback) formátumot is.</item>
+    ///   <item>Write mindig ISO 8601-et ad ki — ezt tudja értelmezni a szerver.</item>
     /// </list>
     ///
-    /// <para>DO NOT change Write back to "/Date(ms)/" — it will break every
-    /// POST that includes DateTime fields (see the full-object fallback in
-    /// <see cref="HotcakesWinFormsApp.Services.OrderStatusUpdateService"/>).</para>
+    /// <para>NE módosítsd vissza a Write-ot „/Date(ms)/"-re — minden olyan
+    /// POST-ot eltörne, ami DateTime mezőt tartalmaz (lásd a teljes-objektum
+    /// fallback-et a <see cref="HotcakesWinFormsApp.Services.OrderStatusUpdateService"/>-ben).</para>
     /// </summary>
     public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
         => writer.WriteStringValue(value.ToString("o", CultureInfo.InvariantCulture));

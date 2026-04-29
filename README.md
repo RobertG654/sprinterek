@@ -1,8 +1,8 @@
 # Hotcakes Rendelések — WinForms Desktop App
 
-> **Célközönség:** Tanulók, akik Hotcakes Commerce API integrációt, WinForms-ot és PDF generálást tanulnak  
+> **Célközönség:** Olyan tanulók, akik Hotcakes Commerce API integrációt, WinForms-ot és PDF generálást szeretnének tanulni  
 > **Keretrendszer:** .NET 8 · Windows Forms · C#  
-> **Ez egy demo alkalmazás** — nem hivatalos számlázó rendszer
+> **Ez egy demó alkalmazás** — nem hivatalos számlázó rendszer
 
 ---
 
@@ -15,7 +15,7 @@
 | Rendelés tételek | Automatikusan betöltve kiválasztáskor (`/orders/{bvin}/items`) |
 | Számla PDF | QuestPDF, A4, `Dokumentumok\GeneratedFiles\Invoices\` |
 | Cimke PDF | QuestPDF, A6, `Dokumentumok\GeneratedFiles\Labels\` |
-| Mock mód | Hardcoded mintaadatokkal működő UI, ha az API nem elérhető |
+| Mock mód | Beépített mintaadatokkal működő felhasználói felület, ha az API nem elérhető |
 | DPI / felbontás | Per-Monitor V2 magas DPI mód — minden monitoron azonos megjelenés |
 
 ---
@@ -97,17 +97,17 @@ A beállítások a felhasználó **roaming profiljába** kerülnek — a projekt
 ```
 (pl. `C:\Users\Alice\AppData\Roaming\HotcakesWinFormsApp\apisettings.json`)
 
-> 🔒 **Miért nem a projekt mappájában?** Az API kulcs titkos érték. Azzal, hogy `%APPDATA%`-ban tároljuk, a kulcs sosem kerül a klónozott / fordított projekt fa alá, így egy `git add .` a projekt mappából nem tudja véletlenül commit-olni. Egy fejlesztő nyugodtan push-olhatja a repót egy publikus GitHub-ra anélkül, hogy a kulcsát megosztaná. A `.gitignore` is tartalmaz egy belt-and-suspenders bejegyzést `apisettings.json`-re arra az esetre, ha egy jövőbeli refaktorálás véletlenül a projekt mappába dobná.
+> 🔒 **Miért nem a projekt mappájában?** Az API kulcs titkos érték. Azzal, hogy `%APPDATA%`-ban tároljuk, a kulcs sosem kerül a klónozott / fordított projekt fa alá, így egy `git add .` a projekt mappából véletlenül sem tudja kommitolni. Egy fejlesztő nyugodtan kitolhatja a repót egy publikus GitHub-ra anélkül, hogy a kulcsát megosztaná. A `.gitignore` is tartalmaz egy biztonsági bejegyzést az `apisettings.json`-re arra az esetre, ha egy jövőbeli refaktorálás véletlenül a projekt mappába dobná.
 
 Egy korábbi verzió a `bin\Debug\net8.0-windows\apisettings.json` útvonalat használta. Az alkalmazás indításkor automatikusan átmásolja a régi fájlt az új helyre és törli az eredetit (lásd `ApiSettingsStore.MigrateLegacyFileIfNeeded`).
 
 Az API kulcs a következő DNN admin oldalon hozható létre:
 ```
-http://[your-site]/DesktopModules/Hotcakes/Core/Admin/configuration/Api.aspx
+http://[az-on-oldala]/DesktopModules/Hotcakes/Core/Admin/configuration/Api.aspx
 ```
 
 > **Fontos:** Az API kulcs **query string paraméterként** kerül átadásra (`?key=...`),
-> **nem** HTTP headerben.
+> **nem** HTTP fejlécben.
 
 Az `apisettings.json` (a `%APPDATA%`-ban) értékei felülírják az `appsettings.json`-ban megadott értékeket — így a felhasználó a telepítés után is módosíthatja a kapcsolati adatokat a telepített fájlok módosítása nélkül.
 
@@ -115,25 +115,25 @@ Az `apisettings.json` (a `%APPDATA%`-ban) értékei felülírják az `appsetting
 
 Egy új fejlesztő számára, aki frissen klónozza a repót:
 
-1. A `appsettings.json` üres `ApiKey`-jel jön (csak placeholder).
+1. Az `appsettings.json` üres `ApiKey`-jel érkezik (csak placeholder).
 2. A `%APPDATA%\HotcakesWinFormsApp\apisettings.json` még nem létezik.
 3. Indításkor automatikusan megnyílik az **API kapcsolat beállítása** ablak, és a fejlesztő beírja a saját kulcsát.
 4. A kulcs a saját `%APPDATA%`-jába kerül — sosem a projekt fa alá.
 
-### Mi van, ha mégis commit-oltam egy kulcsot korábban?
+### Mi van, ha mégis kommitoltam egy kulcsot korábban?
 
-A jelen repó történetében **már szerepel** egy korábbi API kulcs (`appsettings.json` és a `README.md` is tartalmazta egy korai commit-ban). A jelenlegi munkamásolat tisztázása után is **a `git log -p` vissza tudja keresni** ezt a kulcsot. Két lehetőség:
+A jelen repó történetében **már szerepel** egy korábbi API kulcs (az `appsettings.json` és a `README.md` is tartalmazta egy korai kommitban). A jelenlegi munkamásolat tisztázása után is **a `git log -p` vissza tudja keresni** ezt a kulcsot. Két lehetőség:
 
-1. **Forgassa le a kulcsot a Hotcakes admin oldalán** (DNN > Hotcakes > Configuration > API → új kulcs generálása, régi visszavonása). Ez a legegyszerűbb és kötelező lépés mielőtt publikus repót csinál belőle.
-2. (Opcionális) Ha a teljes történetből is ki akarja törölni: használjon `git filter-repo`-t vagy a [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/)-t, majd `git push --force`. Ez átírja a remote történetet — vegye figyelembe, hogy a már klónozott repóknak rebase-elniük kell.
+1. **Forgassa le a kulcsot a Hotcakes admin oldalán** (DNN > Hotcakes > Configuration > API → új kulcs generálása, régi visszavonása). Ez a legegyszerűbb és kötelező lépés, mielőtt publikus repót csinál belőle.
+2. (Opcionális) Ha a teljes történetből is ki akarja törölni: használjon `git filter-repo`-t vagy a [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/)-t, majd `git push --force`. Ez átírja a távoli történetet — vegye figyelembe, hogy a már klónozott repóknak rebase-elniük kell.
 
 ### Beállítások módosítása futás közben
 
-A főablak jobb felső sarkában található **„⚙ API beállítások"** gombbal bármikor újranyithatja az **API kapcsolat beállítása** ablakot:
+A főablak jobb felső sarkában található **„⚙ API beállítások"** gombbal bármikor újranyitható az **API kapcsolat beállítása** ablak:
 
-1. Megjelenik a jelenlegi mentett URL/kulcs.
+1. Megjelenik a jelenleg mentett URL és kulcs.
 2. A „Kapcsolat tesztelése" gomb a friss mezőkkel (még mentés előtt) próbál ki egy `/orders` hívást.
-3. „Mentés és folytatás" után az alkalmazás automatikusan újraépíti az API klienseket az új beállításokkal és frissíti a rendelés-listát — **alkalmazás újraindítás nem szükséges**.
+3. „Mentés és folytatás" után az alkalmazás automatikusan újraépíti az API-klienseket az új beállításokkal és frissíti a rendelés-listát — **alkalmazás-újraindítás nem szükséges**.
 
 ### Végső kérés URL-je
 
@@ -153,7 +153,7 @@ Ha az API nem elérhető, 3 mintarendeléssel is bemutatható az alkalmazás:
 ```json
 "UseMockData": true
 ```
-A mock mód aktív állapotát narancssárga badge jelzi a főablakon.
+A mock mód aktív állapotát narancssárga jelvény jelzi a főablakon.
 
 ---
 
@@ -178,7 +178,7 @@ A mock mód aktív állapotát narancssárga badge jelzi a főablakon.
 3. Ha betöltés közben hiba van, a panel hibaüzenetet mutat
 
 ### PDF generálás
-- **Számla:** tartalmazza az order fejléc adatait + a betöltött tételsorokat  
+- **Számla:** tartalmazza a rendelés fejléc-adatait + a betöltött tételsorokat  
   (ha nincs tétel, összesítő számla generálódik tájékoztató üzenettel)
   - A számla „ELADÓ" blokkjának adatai a `companysettings.json`-ból töltődnek be (lásd [Cégadatok a számlához](#cégadatok-a-számlához)).
   - Sikeres számla generálás után az alkalmazás **automatikusan „Complete" állapotra állítja a rendelést** a Hotcakes API-n keresztül (lásd [Automatikus állapot frissítés](#automatikus-állapot-frissítés-számla-után)).
@@ -245,7 +245,7 @@ Ha a fájl nem létezik, az alkalmazás induláskor automatikusan létrehozza al
 | `InvoiceTitle` | A számla bal felső sarkában megjelenő nagy cím. Alapértelmezés: `SZÁMLA`. |
 | `InvoiceSubtitle` | Kis piros figyelmeztető szöveg a cím alatt. Üres karakterlánc esetén kimarad — éles használathoz érdemes üresre állítani. |
 | `InvoiceIdPrefix` | A jobb felső azonosítónál használt előtag (pl. `INV`, `SZ`, `2026-`). Ezzel saját számlasorszám-mintát lehet kialakítani. |
-| `InvoiceFooterNote` | A lap alján megjelenő disclaimer / megjegyzés. Üresre állítva nincs lábjegyzet. |
+| `InvoiceFooterNote` | A lap alján megjelenő figyelmeztető szöveg / megjegyzés. Üresre állítva nincs lábjegyzet. |
 
 ### A fájl módosítása
 
@@ -257,7 +257,7 @@ Ha a fájl nem létezik, az alkalmazás induláskor automatikusan létrehozza al
 
 > 🔄 **Visszafelé kompatibilitás:** Ha egy korábbi (rövidebb) `companysettings.json`-t talál, az alkalmazás induláskor automatikusan kibővíti a fájlt az új mezőkkel — alapértelmezett értékekkel — hogy szerkeszthető legyen. A meglévő értékek nem vesznek el.
 
-A JSON fájlt a `CompanySettings` osztály olvassa be (`Configuration/CompanySettings.cs`), az `InvoiceTemplateService` pedig ebből tölti a „ELADÓ" blokkot, a fejlécet és a lábjegyzetet — **nincsenek hardcoded cégadatok vagy szövegek a kódban**.
+A JSON fájlt a `CompanySettings` osztály olvassa be (`Configuration/CompanySettings.cs`), az `InvoiceTemplateService` pedig ebből tölti a „ELADÓ" blokkot, a fejlécet és a lábjegyzetet — **nincsenek a kódba égetett (hardcoded) cégadatok vagy szövegek**.
 
 ### Fájl mentési helyek
 
@@ -274,7 +274,7 @@ Amikor a felhasználó a „Számla generálása" gombbal sikeresen készít egy
 
 ### Folyamat: GET → mutáció → POST → verifikáció
 
-A frissítés **egy stratégiát** használ — a teljes rendelést olvassa be, módosítja a státusz mezőket, majd visszaküldi az **egész** objektumot. Ez a kerülőút azért szükséges, mert a Hotcakes endpoint a parciális POST-ot felülírásként kezeli (a hiányzó mezőket alapértékre állítja vissza), nem összevonásként.
+A frissítés **egy stratégiát** használ — a teljes rendelést olvassa be, módosítja az állapot-mezőket, majd visszaküldi az **egész** objektumot. Ez a kerülőút azért szükséges, mert a Hotcakes végpont a parciális POST-ot felülírásként kezeli (a hiányzó mezőket alapértékre állítja vissza), nem összevonásként.
 
 ```
 1. GET  {BaseUrl}/{ApiBasePath}/orders/{bvin}?key={ApiKey}
@@ -288,24 +288,24 @@ A frissítés **egy stratégiát** használ — a teljes rendelést olvassa be, 
         → StatusCode összehasonlítása a célállapottal
 ```
 
-**Endpoint részletek:**
-- A frissítéshez **POST /orders/{bvin}** kell (a `bvin` az URL-ben van) — ez az UPDATE útvonal. A POST /orders (bvin nélkül) a CREATE-NEW útvonal, és HTTP 500-at ad. A PUT szintén HTTP 500.
+**Végpont részletek:**
+- A frissítéshez **POST /orders/{bvin}** kell (a `bvin` az URL-ben van) — ez a frissítő (UPDATE) útvonal. A POST /orders (bvin nélkül) az új-rekord-létrehozó (CREATE) útvonal, ami HTTP 500-at ad. A PUT szintén HTTP 500-at ad.
 - A `recalculateOrder=false` query paraméter elkerüli az árazás újrafuttatását.
-- A test minden `DateTime` mezője **ISO 8601** formátumban megy ki (pl. `2026-04-26T14:32:11.0000000+02:00`). A Hotcakes a GET-eken `/Date(ms)/` formában adja vissza a dátumokat, de a POST input modell-binder kizárólag ISO 8601-et fogad el — ha `/Date(...)`-t küldünk vissza, hibát ad: `{"Code":"EXCEPTION","Description":"/Date(...) is not a valid value for DateTime."}`. Ezt a `DotNetJsonDateConverter.Write` kezeli (lásd a fájlban lévő figyelmeztető kommentet).
+- A body minden `DateTime` mezője **ISO 8601** formátumban megy ki (pl. `2026-04-26T14:32:11.0000000+02:00`). A Hotcakes a GET-eken `/Date(ms)/` formában adja vissza a dátumokat, de a POST bemeneti modell-binder kizárólag ISO 8601-et fogad el — ha `/Date(...)`-t küldünk vissza, hibát ad: `{"Code":"EXCEPTION","Description":"/Date(...) is not a valid value for DateTime."}`. Ezt a `DotNetJsonDateConverter.Write` kezeli (lásd a fájlban lévő figyelmeztető kommentet).
 
 ### Miért nem minimális JSON?
 
-Eredetileg egy minimális body-val próbáltunk frissíteni:
+Eredetileg egy minimális kérés-törzzsel (body-val) próbáltunk frissíteni:
 
 ```json
 { "Bvin": "...", "StatusCode": "...", "StatusName": "Complete", "Instructions": "..." }
 ```
 
-A szerver erre **HTTP 200 OK**-t adott, de a verifikációs GET a régi állapotot mutatta — a hiányzó mezőket (`Items`, `BillingAddress`, `TotalGrand`, stb.) ugyanis alapértékre állította, és az egész rendelés alapértelmezett snapshottá esett volna szét. Ezért a kód mostantól **mindig a teljes snapshotot küldi vissza**, és nincs külön „minimal + fallback" stratégia.
+A szerver erre **HTTP 200 OK**-t adott, de a verifikációs GET a régi állapotot mutatta — a hiányzó mezőket (`Items`, `BillingAddress`, `TotalGrand`, stb.) ugyanis alapértékre állította, és az egész rendelés alapértelmezett snapshot-té esett volna szét. Ezért a kód mostantól **mindig a teljes snapshot-et küldi vissza**, és nincs külön „minimális + visszaeső" stratégia.
 
 ### Verifikáció
 
-Azért szükséges a POST utáni GET, mert a Hotcakes — még a teljes-objektum POST esetén is — időnként **HTTP 200 OK-t ad anélkül, hogy a változás perzisztálódna**. A vak „200 = siker" feltevés csendes hibát okozna: a számla létrejön, de a rendelés állapota nem változik. A verifikációs GET garantálja, hogy a UI csak akkor mutat „sikeres" üzenetet, ha a szerver oldalon is megvan a `Complete` státusz.
+Azért szükséges a POST utáni GET, mert a Hotcakes — még a teljes-objektum POST esetén is — időnként **HTTP 200 OK-t ad anélkül, hogy a változás perzisztálódna**. A vak „200 = siker" feltevés csendes hibát okozna: a számla létrejön, de a rendelés állapota nem változik. A verifikációs GET garantálja, hogy a felhasználói felület csak akkor mutat „sikeres" üzenetet, ha a szerver oldalon is megvan a `Complete` állapot.
 
 ### UI viselkedés
 
@@ -315,16 +315,16 @@ Azért szükséges a POST utáni GET, mert a Hotcakes — még a teljes-objektum
 | A rendelés már „Complete" volt | Sikeres üzenet a státusz sávban, POST nem indul |
 | 4xx/5xx hiba a GET-en vagy POST-on | Egyetlen figyelmeztető ablak a hibakóddal |
 | 200 OK, de a verifikáció nem mutatja a változást | Egyetlen figyelmeztető ablak (nincs további újrapróbálkozás) |
-| Hálózati hiba / timeout | Magyar nyelvű hibaüzenet az `ApiExceptionMapper`-ből |
-| Mock mód aktív | Az állapot frissítés kihagyva, üzenet a státusz sávban |
+| Hálózati hiba / időtúllépés | Magyar nyelvű hibaüzenet az `ApiExceptionMapper`-ből |
+| Mock mód aktív | Az állapot frissítés kihagyva, üzenet a státusz csíkban |
 
-> 💡 **Egyszerűsített folyamat:** A korábbi „Megjeleníti a részletes naplót?" kérdés és a „Részletek" gomb el lett távolítva — egy számla generálás → státusz frissítés folyamat **nem szakad meg további párbeszédablakkal**. A teljes request/response napló továbbra is a Visual Studio Debug Output ablakban olvasható `[StatusUpdate]` előtaggal a fejlesztők számára (a végfelhasználó szempontjából láthatatlan).
+> 💡 **Egyszerűsített folyamat:** A korábbi „Megjeleníti a részletes naplót?" kérdés és a „Részletek" gomb el lett távolítva — egy számla generálás → állapot frissítés folyamatot **már nem szakít meg további párbeszédablak**. A teljes kérés / válasz napló továbbra is a Visual Studio Debug Output ablakában olvasható `[StatusUpdate]` előtaggal — fejlesztői célokra (a végfelhasználó szempontjából láthatatlan).
 
 ### Kód helye
 
 - `Services/OrderStatusUpdateService.cs` — GET + mutáció + teljes POST + verifikációs GET
 - `Services/StatusUpdateResult.cs` — visszatérési érték (Success / Error / DebugLog / VerifiedOrder)
-- `Models/HotcakesOrderStatus.cs` — Complete + Received státusz (StatusCode + StatusName) konstansok
+- `Models/HotcakesOrderStatus.cs` — Complete + Received állapot (StatusCode + StatusName) konstansok
 - `Helpers/DotNetJsonDateConverter.cs` — `/Date(ms)/` olvasás + ISO 8601 írás
 - `Forms/StatusUpdateLogForm.cs` — debug napló megjelenítő ablak
 - `Forms/MainForm.cs` — `UpdateStatusAfterInvoiceAsync` (a `GenerateInvoiceAsync` hívja)
@@ -338,7 +338,7 @@ A főablak alsó panelének **jobb alsó sarkában** található a **„Visszaá
 ### Mikor használható
 
 - A gomb **csak akkor aktív**, ha a kiválasztott rendelés `StatusCode`-ja megegyezik a `Complete` GUID-dal (`09D7305D-…`).
-- Bármely más állapotnál (Received, ReadyForPayment, OnHold, Cancelled stb.) a gomb **letiltva** marad.
+- Bármely más állapotnál (Received, ReadyForPayment, OnHold, Cancelled stb.) a gomb **letiltott** marad.
 - Mock módban a gomb mindig letiltott (nincs élő API).
 
 ### Folyamat
@@ -350,9 +350,9 @@ A főablak alsó panelének **jobb alsó sarkában** található a **„Visszaá
 
 ### Kód helye
 
-- `Forms/MainForm.cs` — `_btnRevertToReceived` gomb (jobb-anchorral) + `RevertOrderToReceivedAsync` + `UpdateRevertButtonState`
-- `Models/HotcakesOrderStatus.cs` — `Received` státusz konstans (`058B09EE-…`)
-- `Services/OrderStatusUpdateService.UpdateOrderStatusAsync(string bvin, OrderStatus targetStatus)` — explicit cél-státuszt fogadó túlterhelés
+- `Forms/MainForm.cs` — `_btnRevertToReceived` gomb (jobb-szélhez horgonyozva) + `RevertOrderToReceivedAsync` + `UpdateRevertButtonState`
+- `Models/HotcakesOrderStatus.cs` — `Received` állapot-konstans (`058B09EE-…`)
+- `Services/OrderStatusUpdateService.UpdateOrderStatusAsync(string bvin, OrderStatus targetStatus)` — explicit célállapotot fogadó túlterhelés
 
 ---
 
@@ -416,10 +416,10 @@ A főablak alsó panelének **jobb alsó sarkában** található a **„Visszaá
 
 Egyéb pontosítások:
 - SKU mező neve: `ProductSku` (nem `Sku`)
-- `StoreId` az API-ban egész szám (nem string) — korábbi verziókban ez lett helytelenül stringként kezelve
-- Opció/variáns szöveg a `ProductShortDescription` HTML mezőben van:  
+- `StoreId` az API-ban egész szám (nem karakterlánc) — korábbi verziókban ezt tévesen karakterláncként kezeltük
+- Opció / variáns szöveg a `ProductShortDescription` HTML mezőben van:  
   pl. `<ul class="lineitemoptions"><li>Szín: XL</li></ul>` → az alkalmazás kinyeri: `Szín: XL`
-- `SelectionData` **nem string** — belső GUID-párokat tartalmazó tömb:  
+- A `SelectionData` **nem karakterlánc** — belső GUID-párokat tartalmazó tömb:  
   `[{ "OptionBvin": "cc248...", "SelectionData": "a0293..." }]`  
   Ezek nem jeleníthetők meg közvetlenül; az olvasható szöveg a `ProductShortDescription`-ben van
 - Dátumok régi .NET formátumban: `/Date(milliszekundum)/` — automatikusan kezelve
@@ -448,8 +448,8 @@ HotcakesWinFormsApp/
 │
 ├── Configuration/
 │   ├── AppSettings.cs           ← appsettings.json modellje
-│   ├── ApiSettingsStore.cs      ← apisettings.json betöltő/mentő (UJ)
-│   └── CompanySettings.cs       ← companysettings.json betöltő/mentő (UJ)
+│   ├── ApiSettingsStore.cs      ← apisettings.json betöltő/mentő (új)
+│   └── CompanySettings.cs       ← companysettings.json betöltő/mentő (új)
 │
 ├── Models/
 │   ├── AddressInfo.cs           ← Cím modell
@@ -457,7 +457,7 @@ HotcakesWinFormsApp/
 │   ├── OrderDetail.cs           ← OrderSummary + Items lista
 │   ├── OrderLine.cs             ← /orders/{bvin}/items egy tétele
 │   ├── HotcakesApiResponse.cs   ← {"Errors":[],"Content":[...]} wrapper
-│   └── HotcakesOrderStatus.cs   ← Order status konstansok (Complete) (UJ)
+│   └── HotcakesOrderStatus.cs   ← Rendelés-állapot konstansok (Complete) (új)
 │
 ├── ViewModels/
 │   ├── OrderViewModel.cs        ← grid-projekció a rendelésekhez
@@ -469,19 +469,19 @@ HotcakesWinFormsApp/
 │   ├── PdfService.cs            ← CompanySettings-et átadja az InvoiceTemplate-nek
 │   ├── InvoiceTemplateService.cs ← CompanySettings → ELADÓ blokk
 │   ├── LabelTemplateService.cs  ← ZXing.Net CODE_128 vonalkód
-│   ├── OrderStatusUpdateService.cs ← POST /orders + verifikációs GET (UJ)
-│   └── StatusUpdateResult.cs    ← Update eredmény + debug napló (UJ)
+│   ├── OrderStatusUpdateService.cs ← POST /orders + verifikációs GET (új)
+│   └── StatusUpdateResult.cs    ← Update eredmény + debug napló (új)
 │
 ├── Helpers/
 │   ├── ApiExceptionMapper.cs    ← Kivételek → Magyar hibaüzenetek
 │   ├── DotNetJsonDateConverter.cs ← /Date(ms)/ kezelő
 │   ├── FilePathHelper.cs
 │   ├── MessageHelper.cs
-│   └── BarcodeGenerator.cs      ← ZXing-alapú CODE_128 PNG generátor (UJ)
+│   └── BarcodeGenerator.cs      ← ZXing-alapú CODE_128 PNG generátor (új)
 │
 └── Forms/
     ├── ApiSettingsForm.cs       ← API kulcs beállító ablak (UJ, LoginForm helyett)
-    ├── StatusUpdateLogForm.cs   ← Debug napló megjelenítő ablak (UJ)
+    ├── StatusUpdateLogForm.cs   ← Debug napló megjelenítő ablak (új)
     └── MainForm.cs              ← Keresés + lapozás + rendelések + auto-Complete
 ```
 
@@ -495,11 +495,11 @@ Az alkalmazás **Per-Monitor V2** magas DPI módban fut (lásd `HotcakesWinForms
 - Ha a felhasználó **több monitor** között húzza át az alkalmazást, és azoknak eltérő a skálázása, a tartalom automatikusan újraskálázódik az új monitor DPI-jére.
 - A vezérlők elrendezése (gombok, gridek, kártyák) arányosan nyúlik / zsugorodik a felhasználói skálázással.
 
-> 🔧 **Ha valami mégis rosszul jelenne meg:** ellenőrizze, hogy a Windows „Display settings" → „Scale and layout" beállítása nem rejtett 175%-on vagy hasonló nem-szabványos értéken van-e. Ezekben az esetekben az AutoScale néha kerekítési hibákat mutathat — ekkor 100% / 125% / 150% / 200% értékek a leg­megbízhatóbbak.
+> 🔧 **Ha valami mégis rosszul jelenne meg:** ellenőrizze, hogy a Windows **Megjelenítés beállításai** → **Méretezés és elrendezés** értéke nincs-e egy szokatlan, nem szabványos értéken (pl. 175%). Ilyen esetekben az automatikus skálázás néha kerekítési hibákat mutat — a 100% / 125% / 150% / 200% beállítások a legmegbízhatóbbak.
 
 ---
 
-## Hibakeresés (Troubleshooting)
+## Hibakeresés
 
 ### Érvénytelen vagy hiányzó API kulcs (HTTP 401/403)
 **Tünet:** `Az API kulcs hiányzik vagy érvénytelen` üzenet.  
@@ -526,11 +526,11 @@ Az alkalmazás **Per-Monitor V2** magas DPI módban fut (lásd `HotcakesWinForms
 **Hibakeresés:** Debug Output → `[HotcakesAPI]` sorok tartalmazzák a nyers JSON-t (első 800 karakter).
 
 Ismert korábbi hibák:
-- `StoreId` a DTO-ban `string`-ként volt tipizálva, holott az API egész számot küld → javítva `OrderSummary`, `AddressInfo`, `OrderLine`-ban
-- `SelectionData` a DTO-ban `string`-ként volt tipizálva, holott az API GUID-párokat tartalmazó tömböt küld → javítva: `List<SelectionDataEntry>`
+- A `StoreId` a DTO-ban `string`-ként volt tipizálva, holott az API egész számot küld → javítva az `OrderSummary`, `AddressInfo`, `OrderLine`-ban
+- A `SelectionData` a DTO-ban `string`-ként volt tipizálva, holott az API GUID-párokat tartalmazó tömböt küld → javítva: `List<SelectionDataEntry>`
 
 ### Nem jelenik meg tétel
-**Tünet:** Az items panel `Ehhez a rendeléshez nem találhatók tételek` üzenetet mutat.  
+**Tünet:** A tétel-panel `Ehhez a rendeléshez nem találhatók tételek` üzenetet mutat.  
 Ez normális lehet:
 - A rendelésnek valóban nincs tétele
 - A rendelés piszkozat állapotban van
@@ -543,8 +543,8 @@ Ez normális lehet:
 |---|---|
 | Rendelések listázása (`/orders`) | ✅ |
 | Tételek betöltése (`/orders/{bvin}/items`) | ✅ |
-| `bvin` alapú items endpoint | ✅ |
-| Magyar hibaüzenetek (timeout, 404, 401, hálózat, JSON) | ✅ |
+| `bvin` alapú tétel-végpont | ✅ |
+| Magyar hibaüzenetek (időtúllépés, 404, 401, hálózat, JSON) | ✅ |
 | `/Date(ms)/` dátum formátum kezelése | ✅ |
 | Mock mód | ✅ |
 | Számla PDF (tételekkel vagy összesítőként) | ✅ |
@@ -576,7 +576,7 @@ Ez normális lehet:
 | `QuestPDF` | 2024.3.4 |
 | `ZXing.Net` | 0.16.9 |
 
-**QuestPDF licenc:** Community licenc — ingyenes nem kereskedelmi használatra.
+**QuestPDF licenc:** Közösségi (Community) licenc — ingyenes, nem kereskedelmi használatra.  
 **ZXing.Net licenc:** Apache 2.0.
 
 ---
@@ -587,5 +587,5 @@ Ez normális lehet:
 2. **Korlátozott írás** — az alkalmazás csak rendelés-állapotot ír (számla generáláskor → „Complete", vagy manuálisan vissza → „Received"); egyéb mezőket (vevő, tételek, árak) nem módosít.
 3. **Kliensoldali lapozás** — a `/orders` végpont továbbra is max. 50 rendelést ad vissza egy hívásban; a 20-as oldalméret ezen a kliensoldali listán fut.
 4. **HTTP (nem HTTPS)** — éles használathoz HTTPS javasolt
-5. **Hardkódolt státusz GUID-ok** — a `Complete` (`09D7305D-…`) és `Received` (`058B09EE-…`) GUID-ok a `Models/HotcakesOrderStatus.cs`-ben vannak rögzítve a Hotcakes Commerce alapértelmezésekkel. Ha a telepítés egyedi GUID-okat használ, ott kell módosítani.
-6. **Csak két státusz** — az `OrderStatusUpdateService` `Complete`-re és `Received`-re tud váltani. További státuszokhoz bővíteni kell a `HotcakesOrderStatus` osztályt és a hívási helyet.
+5. **Kódba égetett állapot-GUID-ok** — a `Complete` (`09D7305D-…`) és `Received` (`058B09EE-…`) GUID-ok a `Models/HotcakesOrderStatus.cs`-ben vannak rögzítve a Hotcakes Commerce alapértelmezésekkel. Ha a telepítés egyedi GUID-okat használ, ott kell módosítani.
+6. **Csak két állapot** — az `OrderStatusUpdateService` `Complete`-re és `Received`-re tud váltani. További állapotokhoz bővíteni kell a `HotcakesOrderStatus` osztályt és a hívási helyet.

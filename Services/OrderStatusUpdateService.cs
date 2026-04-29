@@ -8,34 +8,38 @@ using HotcakesWinFormsApp.Models;
 namespace HotcakesWinFormsApp.Services;
 
 /// <summary>
-/// Updates the Hotcakes order status (StatusCode + StatusName) via the
-/// REST API and verifies the change actually persisted.
+/// A Hotcakes rendelés-állapot (StatusCode + StatusName) frissítését végzi
+/// a REST API-n keresztül, és ellenőrzi, hogy a változás valóban perzisztálódott.
 ///
-/// ── ENDPOINT BEHAVIOR (confirmed against the live install) ──────────
-/// Update      →  POST /orders/{bvin}?key={apiKey}&amp;recalculateOrder=false
-///                 with the FULL OrderDTO as body, mutated to carry the
-///                 desired StatusCode + StatusName (and an Instructions note).
-///                 Notes:
-///                   • PUT returns HTTP 500.
-///                   • POST to /orders (no bvin in URL) is the CREATE-NEW
-///                     route — sending an update payload there 500s.
-///                   • Minimal-body POST to /orders/{bvin} returns HTTP 200
-///                     but does NOT persist the change. The endpoint replaces
-///                     the order with whatever you send; missing fields get
-///                     reset to defaults instead of preserved. So we always
-///                     send the full snapshot read back via GET.
-///                   • DateTime fields MUST be ISO 8601 in the body — the
-///                     server explicitly returns "/Date(...) is not a valid
-///                     value for DateTime." if you send the WCF format.
-///                     <see cref="DotNetJsonDateConverter"/> writes ISO 8601.
-/// Verify      →  GET  /orders/{bvin}?key={apiKey}, after ~500 ms.
-///                 Compare StatusCode against the requested value — Hotcakes
-///                 will sometimes 200 OK without persisting.
+/// ── VÉGPONT VISELKEDÉS (élő telepítésen megerősítve) ────────────────
+/// Frissítés   →  POST /orders/{bvin}?key={apiKey}&amp;recalculateOrder=false
+///                 a TELJES OrderDTO body-val, amit úgy módosítunk, hogy
+///                 a kívánt StatusCode + StatusName (és egy Instructions
+///                 megjegyzés) szerepeljen benne.
+///                 Megjegyzések:
+///                   • A PUT HTTP 500-at ad.
+///                   • A POST a /orders-ra (bvin nélkül az URL-ben) a
+///                     CREATE-NEW útvonal — frissítő payload-ot oda küldve
+///                     500 lesz a vég.
+///                   • A /orders/{bvin}-re küldött minimális body-jú POST
+///                     HTTP 200-at ad, de NEM perzisztálja a változást.
+///                     A végpont a rendelést azzal helyettesíti, amit
+///                     küldünk; a hiányzó mezőket alapértékre állítja
+///                     megőrzés helyett. Ezért mindig a GET-tel visszaolvasott
+///                     teljes snapshot-et küldjük el.
+///                   • A DateTime mezőknek ISO 8601 formátumban KELL lenniük
+///                     a body-ban — a szerver explicit így válaszol, ha WCF
+///                     formátumot küldünk: "/Date(...) is not a valid value
+///                     for DateTime."
+///                     A <see cref="DotNetJsonDateConverter"/> ISO 8601-ben ír.
+/// Verifikáció →  GET /orders/{bvin}?key={apiKey}, kb. 500 ms múlva.
+///                 Összehasonlítjuk a StatusCode-ot a kért értékkel — a
+///                 Hotcakes néha 200 OK-t ad anélkül, hogy perzisztálná.
 ///
-/// ── INTEGRATION ─────────────────────────────────────────────────────
-/// Call from MainForm.GenerateInvoiceAsync after the PDF is saved:
+/// ── INTEGRÁCIÓ ──────────────────────────────────────────────────────
+/// A MainForm.GenerateInvoiceAsync-ből hívd, miután a PDF elmentődött:
 ///   var result = await statusService.UpdateOrderStatusAsync(order.Bvin);
-///   if (!result.Success) { ... show error ... }
+///   if (!result.Success) { ... hibaüzenet ... }
 /// </summary>
 public class OrderStatusUpdateService
 {
@@ -43,10 +47,10 @@ public class OrderStatusUpdateService
     private const string OrderByBvinTemplate = "orders/{0}";
     private const string ApiKeyQueryParam = "key";
 
-    /// <summary>How long to wait between the update POST and the verification GET.</summary>
+    /// <summary>Mennyit várjunk a frissítő POST és a verifikációs GET között.</summary>
     private static readonly TimeSpan VerificationDelay = TimeSpan.FromMilliseconds(500);
 
-    /// <summary>The status this service applies. Currently only "Complete" is in use.</summary>
+    /// <summary>A szerviz alapértelmezett célállapota. Jelenleg csak a „Complete" használt.</summary>
     public OrderStatus TargetStatus { get; }
 
     private readonly AppSettings _settings;
@@ -61,8 +65,8 @@ public class OrderStatusUpdateService
     };
 
     /// <summary>
-    /// Pretty-printed for logs and for the fallback POST so a human inspecting 
-    /// network traces can see exactly what we sent.
+    /// Szépen formázott (indented) — a naplókhoz és a fallback POST-hoz is,
+    /// hogy aki a hálózati trace-eket vizsgálja, pontosan lássa, mit küldtünk.
     /// </summary>
     private static readonly JsonSerializerOptions JsonWriteOptions = new()
     {
@@ -78,32 +82,33 @@ public class OrderStatusUpdateService
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // Public entry point
+    // Publikus belépési pont
     // ──────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Sets the order's status to the service's default <see cref="TargetStatus"/>
-    /// (typically <c>Complete</c>) and verifies the change. Convenience overload
-    /// for the common post-invoice case.
+    /// A rendelés állapotát a szerviz alapértelmezett <see cref="TargetStatus"/>-ára
+    /// állítja (általában <c>Complete</c>) és ellenőrzi a változást.
+    /// Kényelmi overload a számla utáni gyakori esetre.
     /// </summary>
     public Task<StatusUpdateResult> UpdateOrderStatusAsync(string bvin)
         => UpdateOrderStatusAsync(bvin, TargetStatus);
 
     /// <summary>
-    /// Sets the order's status to <paramref name="targetStatus"/> and verifies the change.
+    /// A rendelés állapotát a <paramref name="targetStatus"/>-ra állítja és
+    /// ellenőrzi a változást.
     ///
-    /// Single-strategy flow (minimal-body POST proved to silently lose data —
-    /// see the class-level summary):
-    ///   1. GET /orders/{bvin}    — fetch the current full snapshot.
-    ///   2. Mutate StatusCode + StatusName + Instructions on the snapshot.
-    ///   3. POST /orders/{bvin}   — send the modified snapshot back.
-    ///   4. Wait <see cref="VerificationDelay"/>.
-    ///   5. GET /orders/{bvin}    — verify the new StatusCode persisted.
+    /// Egystratégiás folyamat (a minimális body-jú POST bizonyítottan csendben
+    /// adatot veszít — lásd az osztály-szintű összefoglalót):
+    ///   1. GET /orders/{bvin}    — a jelenlegi teljes snapshot lekérése.
+    ///   2. StatusCode + StatusName + Instructions átírása a snapshoton.
+    ///   3. POST /orders/{bvin}   — a módosított snapshot visszaküldése.
+    ///   4. <see cref="VerificationDelay"/> várakozás.
+    ///   5. GET /orders/{bvin}    — ellenőrizzük, hogy az új StatusCode perzisztálódott.
     ///
-    /// The explicit <paramref name="targetStatus"/> overload is what lets the
-    /// same service instance push an order to <c>Complete</c> after invoice
-    /// generation AND revert it back to <c>Received</c> from the manual
-    /// "revert" button on the main form.
+    /// Az explicit <paramref name="targetStatus"/> overload teszi lehetővé, hogy
+    /// ugyanaz a szerviz példány <c>Complete</c>-re tolja a rendelést számla
+    /// generálás után, ÉS visszaállítsa <c>Received</c>-re a főablak
+    /// kézi „visszaállítás" gombjáról.
     /// </summary>
     public async Task<StatusUpdateResult> UpdateOrderStatusAsync(string bvin, OrderStatus targetStatus)
     {
@@ -112,7 +117,7 @@ public class OrderStatusUpdateService
 
         if (string.IsNullOrWhiteSpace(bvin))
         {
-            log.AppendLine("  ✘ Bvin is empty — refusing to call API.");
+            log.AppendLine("  ✘ A Bvin üres — nem hívjuk az API-t.");
             return StatusUpdateResult.Fail(
                 "Hiányzik a rendelés azonosítója (Bvin) — az állapot frissítése nem küldhető el.",
                 log.ToString());
@@ -122,16 +127,17 @@ public class OrderStatusUpdateService
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // GET full → mutate → POST full → verify
+    // Teljes GET → mutáció → teljes POST → verifikáció
     //
-    // This is the only strategy that actually works against this Hotcakes
-    // installation. Sending a partial body silently loses unspecified fields.
+    // Ez az egyetlen stratégia, ami valóban működik ezen a Hotcakes
+    // telepítésen. Parciális body küldésekor a meg nem adott mezők csendben
+    // elvesznek.
     // ──────────────────────────────────────────────────────────────────
 
     private async Task<StatusUpdateResult> TryFullUpdateAsync(string bvin, OrderStatus targetStatus, StringBuilder log)
     {
-        // ── 1. GET the current snapshot ─────────────────────────────────
-        log.AppendLine("  Step 1: GET current order snapshot.");
+        // ── 1. A jelenlegi snapshot lekérése GET-tel ────────────────────
+        log.AppendLine("  1. lépés: GET a rendelés jelenlegi snapshot-jához.");
         var (full, fetchErr) = await FetchOrderAsync(bvin, log);
         if (fetchErr != null)
         {
@@ -146,14 +152,14 @@ public class OrderStatusUpdateService
                 log.ToString());
         }
 
-        // Already in the requested status? Skip the round-trip and report success.
+        // Már a kért állapotban van? Kihagyjuk a kerülőutat és sikert jelentünk.
         if (StatusMatches(full, targetStatus))
         {
-            log.AppendLine($"  ✔ Order already has target status '{targetStatus.StatusName}' — no POST needed.");
+            log.AppendLine($"  ✔ A rendelés már a célállapotban van: '{targetStatus.StatusName}' — POST nem szükséges.");
             return StatusUpdateResult.Ok(full, log.ToString());
         }
 
-        // ── 2. Mutate status fields on the snapshot ────────────────────
+        // ── 2. Status mezők átírása a snapshoton ────────────────────────
         var previousStatusCode = full.StatusCode;
         var previousStatusName = full.StatusName;
         full.StatusCode = targetStatus.StatusCode;
@@ -164,14 +170,14 @@ public class OrderStatusUpdateService
             ? noteSuffix
             : $"{full.Instructions} | {noteSuffix}";
 
-        log.AppendLine($"  Step 2: status mutation '{previousStatusName}' ({previousStatusCode}) → " +
+        log.AppendLine($"  2. lépés: status mutáció '{previousStatusName}' ({previousStatusCode}) → " +
                        $"'{targetStatus.StatusName}' ({targetStatus.StatusCode}).");
 
-        // ── 3. POST the full object back ───────────────────────────────
+        // ── 3. A teljes objektum visszaküldése POST-tal ────────────────
         var url = BuildPostUrl(bvin);
         var body = JsonSerializer.Serialize(full, JsonWriteOptions);
 
-        log.AppendLine($"  Step 3: POST {url}  ({body.Length} chars)");
+        log.AppendLine($"  3. lépés: POST {url}  ({body.Length} karakter)");
 
         var (postOk, postError) = await SendPostAsync(url, body, log);
         if (!postOk)
@@ -181,10 +187,10 @@ public class OrderStatusUpdateService
                 log.ToString());
         }
 
-        // ── 4. Wait, then 5. verify ────────────────────────────────────
+        // ── 4. Várakozás, majd 5. verifikáció ──────────────────────────
         await Task.Delay(VerificationDelay);
 
-        log.AppendLine("  Step 5: verification GET.");
+        log.AppendLine("  5. lépés: verifikációs GET.");
         var (verified, verifyError) = await FetchOrderAsync(bvin, log);
         if (verifyError != null)
         {
@@ -195,12 +201,12 @@ public class OrderStatusUpdateService
 
         if (StatusMatches(verified, targetStatus))
         {
-            log.AppendLine($"  ✔ Verified: server now reports StatusCode='{verified!.StatusCode}', StatusName='{verified.StatusName}'.");
+            log.AppendLine($"  ✔ Verifikálva: a szerver szerint StatusCode='{verified!.StatusCode}', StatusName='{verified.StatusName}'.");
             return StatusUpdateResult.Ok(verified, log.ToString());
         }
 
-        log.AppendLine($"  ✘ Verification mismatch: expected '{targetStatus.StatusCode}/{targetStatus.StatusName}', " +
-                       $"got '{verified?.StatusCode}/{verified?.StatusName}'.");
+        log.AppendLine($"  ✘ Verifikációs eltérés: várt '{targetStatus.StatusCode}/{targetStatus.StatusName}', " +
+                       $"kapott '{verified?.StatusCode}/{verified?.StatusName}'.");
         return StatusUpdateResult.Fail(
             "A POST után az állapot nem változott meg a szerveren.",
             log.ToString(),
@@ -208,18 +214,20 @@ public class OrderStatusUpdateService
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // HTTP helpers
+    // HTTP segédek
     // ──────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Builds POST /orders/{bvin}?key=...&amp;recalculateOrder=false.
+    /// Felépíti a POST /orders/{bvin}?key=...&amp;recalculateOrder=false URL-t.
     ///
-    /// <para>The bvin is in the URL because this is the Hotcakes Commerce
-    /// REST controller's UPDATE route. Posting to /orders (no bvin in URL)
-    /// hits the CREATE-NEW route instead and explodes server-side.</para>
+    /// <para>A bvin azért van az URL-ben, mert ez a Hotcakes Commerce REST
+    /// controller UPDATE útvonala. A /orders-ra postolva (bvin nélkül az
+    /// URL-ben) a CREATE-NEW útvonalat találnánk el, ami szerveroldalon
+    /// szétdurranna.</para>
     ///
-    /// <para>recalculateOrder=false avoids re-running pricing rules — we're
-    /// only changing status, so we don't want the totals to drift.</para>
+    /// <para>A recalculateOrder=false elkerüli az árazási szabályok újrafutását
+    /// — csak az állapotot változtatjuk, nem szeretnénk hogy az összegek
+    /// elcsússzanak.</para>
     /// </summary>
     private string BuildPostUrl(string bvin)
     {
@@ -242,8 +250,9 @@ public class OrderStatusUpdateService
     }
 
     /// <summary>
-    /// POSTs the JSON body and returns (true, null) on 2xx or (false, mappedError)
-    /// on transport errors / 4xx / 5xx. Adds compact request/response info to the log.
+    /// Elküldi a JSON body-t POST-tal, és (true, null)-t ad vissza 2xx esetén
+    /// vagy (false, mappedError)-t hálózati hibáknál / 4xx / 5xx esetén.
+    /// Tömör request / response infót ad a naplóhoz.
     /// </summary>
     private async Task<(bool Ok, string? Error)> SendPostAsync(string url, string body, StringBuilder log)
     {
@@ -256,7 +265,7 @@ public class OrderStatusUpdateService
             var respBody = await response.Content.ReadAsStringAsync();
 
             log.AppendLine($"  ← HTTP {(int)response.StatusCode} {response.ReasonPhrase}");
-            log.AppendLine("  Response:");
+            log.AppendLine("  Válasz:");
             log.AppendLine(IndentLines(Truncate(respBody, 800), 4));
 
             if (!response.IsSuccessStatusCode)
@@ -265,11 +274,11 @@ public class OrderStatusUpdateService
                     (int)response.StatusCode, response.ReasonPhrase));
             }
 
-            // Even on 200, the wrapper may carry { "Errors": [...] }.
-            // We surface those as failures so the verification step can run informedly.
+            // Még 200-on is lehet { "Errors": [...] } a wrapperben.
+            // Ezt hibaként tálaljuk, hogy a verifikációs lépés tudjon róla.
             if (TryExtractEnvelopeErrors(respBody, out var envErrors))
             {
-                log.AppendLine($"  ! Envelope reported errors: {envErrors}");
+                log.AppendLine($"  ! A wrapper hibákat jelzett: {envErrors}");
                 return (false, ApiExceptionMapper.MapApiErrors(envErrors));
             }
 
@@ -277,7 +286,7 @@ public class OrderStatusUpdateService
         }
         catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
         {
-            log.AppendLine("  ✘ POST timed out after 30 s.");
+            log.AppendLine("  ✘ A POST 30 mp után időtúllépésbe futott.");
             return (false, ApiExceptionMapper.MapTimeout());
         }
         catch (HttpRequestException ex)
@@ -287,12 +296,12 @@ public class OrderStatusUpdateService
         }
         catch (Exception ex)
         {
-            log.AppendLine($"  ✘ Unexpected: {ex.Message}");
+            log.AppendLine($"  ✘ Váratlan: {ex.Message}");
             return (false, ApiExceptionMapper.MapUnexpected(ex));
         }
     }
 
-    /// <summary>GET /orders/{bvin} — returns the order as Hotcakes currently has it.</summary>
+    /// <summary>GET /orders/{bvin} — a rendelést úgy adja vissza, ahogy a Hotcakes jelenleg tárolja.</summary>
     private async Task<(OrderDetail? Order, string? Error)> FetchOrderAsync(string bvin, StringBuilder log)
     {
         var url = BuildGetUrl(bvin);
@@ -303,12 +312,12 @@ public class OrderStatusUpdateService
             var response = await _httpClient.GetAsync(url);
             var json = await response.Content.ReadAsStringAsync();
 
-            log.AppendLine($"  ← HTTP {(int)response.StatusCode} ({json.Length} chars)");
+            log.AppendLine($"  ← HTTP {(int)response.StatusCode} ({json.Length} karakter)");
 
             if (!response.IsSuccessStatusCode)
                 return (null, ApiExceptionMapper.MapHttpStatus((int)response.StatusCode, response.ReasonPhrase));
 
-            // Hotcakes wraps responses in { "Errors": [...], "Content": { ... } }
+            // A Hotcakes a válaszokat így csomagolja: { "Errors": [...], "Content": { ... } }
             var wrapped = JsonSerializer.Deserialize<HotcakesApiResponse<OrderDetail>>(json, JsonReadOptions);
             if (wrapped == null)
                 return (null, ApiExceptionMapper.MapDeserialization());
@@ -320,7 +329,7 @@ public class OrderStatusUpdateService
         }
         catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
         {
-            log.AppendLine("  ✘ GET timed out after 30 s.");
+            log.AppendLine("  ✘ A GET 30 mp után időtúllépésbe futott.");
             return (null, ApiExceptionMapper.MapTimeout());
         }
         catch (HttpRequestException ex)
@@ -330,18 +339,18 @@ public class OrderStatusUpdateService
         }
         catch (JsonException ex)
         {
-            log.AppendLine($"  ✘ JSON parse error: {ex.Message}");
+            log.AppendLine($"  ✘ JSON parse hiba: {ex.Message}");
             return (null, ApiExceptionMapper.MapDeserialization());
         }
         catch (Exception ex)
         {
-            log.AppendLine($"  ✘ Unexpected: {ex.Message}");
+            log.AppendLine($"  ✘ Váratlan: {ex.Message}");
             return (null, ApiExceptionMapper.MapUnexpected(ex));
         }
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // Pure helpers
+    // Tiszta segédfüggvények
     // ──────────────────────────────────────────────────────────────────
 
     private static bool StatusMatches(OrderDetail? order, OrderStatus target)
@@ -352,9 +361,10 @@ public class OrderStatusUpdateService
     }
 
     /// <summary>
-    /// Best-effort attempt to pull the "Errors" array out of an arbitrary Hotcakes
-    /// response envelope without binding to a specific Content shape.
-    /// Returns false when the body has no errors or cannot be parsed.
+    /// Best-effort kísérlet, hogy az „Errors" tömböt kinyerjük egy
+    /// tetszőleges Hotcakes response envelope-ból, anélkül hogy konkrét
+    /// Content alakhoz kötnénk.
+    /// false-t ad vissza, ha a body-ban nincs hiba vagy nem parse-olható.
     /// </summary>
     private static bool TryExtractEnvelopeErrors(string body, out string errors)
     {
@@ -388,5 +398,5 @@ public class OrderStatusUpdateService
     }
 
     private static string Truncate(string s, int max) =>
-        s.Length <= max ? s : s[..max] + $"… (+{s.Length - max} chars)";
+        s.Length <= max ? s : s[..max] + $"… (+{s.Length - max} karakter)";
 }

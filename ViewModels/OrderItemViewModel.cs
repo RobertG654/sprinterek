@@ -3,34 +3,37 @@ using HotcakesWinFormsApp.Models;
 namespace HotcakesWinFormsApp.ViewModels;
 
 /// <summary>
-/// Flat display-only projection of OrderLine for the items DataGridView.
+/// Lapos, csak megjelenítésre szánt projekció az OrderLine-ból, a tétel
+/// DataGridView-hez.
 ///
-/// Only contains the six columns shown in the UI. All internal API fields
-/// (IDs, flags, tax internals, shipping dimensions, etc.) are excluded.
+/// Csak a hat oszlopot tartalmazza, ami az UI-on látszik. Minden belső API
+/// mező (ID-k, flag-ek, ÁFA-belső adatok, szállítási méretek stb.) ki van
+/// hagyva.
 ///
-/// HTML in ProductShortDescription is stripped via OrderLine.VariantDisplay
-/// so the Option column always contains plain text.
+/// A ProductShortDescription HTML-jét az OrderLine.VariantDisplay-en keresztül
+/// nyitjuk ki, így az Option oszlop mindig sima szöveget tartalmaz.
 /// </summary>
 public sealed class OrderItemViewModel
 {
     public string ProductName { get; }
 
-    /// <summary>SKU from ProductSku field.</summary>
+    /// <summary>SKU a ProductSku mezőből.</summary>
     public string Sku { get; }
 
     /// <summary>
-    /// Plain-text option/variant info extracted from ProductShortDescription HTML.
-    /// Example: "&lt;ul&gt;&lt;li&gt;Szín: XL&lt;/li&gt;&lt;/ul&gt;" → "Szín: XL"
-    /// Empty string when no option data is present.
+    /// Tiszta szöveges opció / variáns infó, a ProductShortDescription HTML-ből
+    /// kinyerve.
+    /// Példa: "&lt;ul&gt;&lt;li&gt;Szín: XL&lt;/li&gt;&lt;/ul&gt;" → "Szín: XL"
+    /// Üres karakterlánc, ha nincs opció adat.
     /// </summary>
     public string Option { get; }
 
     public int Quantity { get; }
 
-    /// <summary>AdjustedPricePerItem when non-zero, otherwise BasePricePerItem.</summary>
+    /// <summary>AdjustedPricePerItem ha nem nulla, különben BasePricePerItem.</summary>
     public decimal UnitPrice { get; }
 
-    /// <summary>LineTotal when non-zero, otherwise Quantity × UnitPrice.</summary>
+    /// <summary>LineTotal ha nem nulla, különben Quantity × UnitPrice.</summary>
     public decimal LineTotal { get; }
 
     // ──────────────────────────────────────────────────────────────────────────

@@ -4,21 +4,21 @@ using HotcakesWinFormsApp.Models;
 namespace HotcakesWinFormsApp.Services;
 
 /// <summary>
-/// Outcome of an <see cref="OrderStatusUpdateService"/> call.
+/// Egy <see cref="OrderStatusUpdateService"/> hívás eredménye.
 ///
-/// <para>The service ALWAYS attempts a verification GET after the POST and reports
-/// what the server actually persisted, because Hotcakes will sometimes return
-/// HTTP 200 OK without changing the underlying record.</para>
+/// <para>A szerviz a POST UTÁN MINDIG verifikációs GET-et indít, és azt
+/// jelenti, amit a szerver ténylegesen perzisztált, mert a Hotcakes néha
+/// HTTP 200 OK-t ad anélkül, hogy a rekord ténylegesen módosulna.</para>
 ///
 /// <list type="bullet">
-///   <item><see cref="Success"/> is true only when the verification GET shows
-///         the new <see cref="OrderStatus.StatusCode"/> on the order.</item>
-///   <item><see cref="ErrorMessage"/> is a Hungarian, user-displayable string
-///         (null on success).</item>
-///   <item><see cref="DebugLog"/> contains the full request/response trace —
-///         useful while we're still confirming endpoint behavior.</item>
-///   <item><see cref="VerifiedOrder"/> is the order as the server returned it
-///         after the update, when the verification GET succeeded.</item>
+///   <item>A <see cref="Success"/> csak akkor true, ha a verifikációs GET
+///         a rendelésen az új <see cref="OrderStatus.StatusCode"/>-ot mutatja.</item>
+///   <item>Az <see cref="ErrorMessage"/> egy magyar, felhasználó-megjelenítésre
+///         alkalmas karakterlánc (sikernél null).</item>
+///   <item>A <see cref="DebugLog"/> tartalmazza a teljes request / response
+///         trace-t — hasznos, amíg a végpont viselkedését erősítjük meg.</item>
+///   <item>A <see cref="VerifiedOrder"/> a rendelés úgy, ahogy a frissítés után
+///         a szerver visszaadta, ha a verifikációs GET sikerült.</item>
 /// </list>
 /// </summary>
 public sealed class StatusUpdateResult
@@ -35,8 +35,9 @@ public sealed class StatusUpdateResult
         new() { Success = false, ErrorMessage = error, DebugLog = log, VerifiedOrder = verified };
 
     /// <summary>
-    /// Helper that returns a copy with extra log lines appended — keeps the
-    /// service code free from `var sb = ...; sb.AppendLine(...)` boilerplate.
+    /// Segéd, ami egy másolatot ad vissza extra napló-sorokkal kiegészítve —
+    /// így a szerviz kód mentes marad a `var sb = ...; sb.AppendLine(...)`
+    /// boilerplate-től.
     /// </summary>
     public StatusUpdateResult WithExtraLog(string extraLog)
     {

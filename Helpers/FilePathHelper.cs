@@ -1,10 +1,10 @@
 namespace HotcakesWinFormsApp.Helpers;
 
 /// <summary>
-/// Centralizes all file path logic for generated PDF files.
-/// Output root: Documents\GeneratedFiles\
-///   Invoices: Documents\GeneratedFiles\Invoices\
-///   Labels:   Documents\GeneratedFiles\Labels\
+/// A generált PDF fájlok útvonalkezelését központosítja.
+/// Kimeneti gyökér: Dokumentumok\GeneratedFiles\
+///   Számlák:        Dokumentumok\GeneratedFiles\Invoices\
+///   Címkék:         Dokumentumok\GeneratedFiles\Labels\
 /// </summary>
 public static class FilePathHelper
 {
@@ -19,9 +19,9 @@ public static class FilePathHelper
     public static void EnsureLabelDirectory() => Directory.CreateDirectory(LabelDir);
 
     /// <summary>
-    /// Returns the full output path for an invoice PDF.
-    /// Format: Szamla_{OrderId}_{yyyyMMdd_HHmmss}.pdf
-    /// Also ensures the Invoices directory exists.
+    /// Visszaadja a számla PDF teljes kimeneti útvonalát.
+    /// Formátum: Szamla_{OrderId}_{yyyyMMdd_HHmmss}.pdf
+    /// Egyúttal biztosítja, hogy az Invoices könyvtár létezzen.
     /// </summary>
     public static string GetInvoicePath(string orderId)
     {
@@ -32,9 +32,9 @@ public static class FilePathHelper
     }
 
     /// <summary>
-    /// Returns the full output path for a shipping label PDF.
-    /// Format: Cimke_{OrderId}_{yyyyMMdd_HHmmss}.pdf
-    /// Also ensures the Labels directory exists.
+    /// Visszaadja a szállítási címke PDF teljes kimeneti útvonalát.
+    /// Formátum: Cimke_{OrderId}_{yyyyMMdd_HHmmss}.pdf
+    /// Egyúttal biztosítja, hogy a Labels könyvtár létezzen.
     /// </summary>
     public static string GetLabelPath(string orderId)
     {
@@ -44,7 +44,7 @@ public static class FilePathHelper
         return Path.Combine(LabelDir, $"Cimke_{safeId}_{timestamp}.pdf");
     }
 
-    /// <summary>Strips characters that are invalid in Windows file names.</summary>
+    /// <summary>Eltávolítja a Windows fájlnévben érvénytelen karaktereket.</summary>
     private static string SanitizeFileName(string name)
     {
         var invalid = Path.GetInvalidFileNameChars();

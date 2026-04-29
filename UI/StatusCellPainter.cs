@@ -3,14 +3,14 @@ using System.Drawing.Drawing2D;
 namespace HotcakesWinFormsApp.UI;
 
 /// <summary>
-/// Helpers used by DataGridView CellPainting handlers to render the two
-/// custom status visuals from the reference design:
+/// Segédfüggvények a DataGridView CellPainting handlerek számára, a
+/// referencia dizájn két egyedi állapot-vizualizációjának kirajzolásához:
 ///
-///   • payment status — bold orange text, no background pill.
-///   • order status   — text in a soft-pink rounded pill.
+///   • fizetési állapot — vastag narancssárga szöveg, háttér pill nélkül.
+///   • rendelés állapot — szöveg lágy rózsaszín, lekerekített pill-ben.
 ///
-/// Painting is done manually so the cell still cooperates with selection,
-/// alternating background, etc. (we draw the background ourselves first).
+/// A festést manuálisan csináljuk, hogy a cella továbbra is együttműködjön
+/// a kijelöléssel, váltakozó háttérrel stb. (a hátteret is mi rajzoljuk először).
 /// </summary>
 internal static class StatusCellPainter
 {
@@ -65,8 +65,9 @@ internal static class StatusCellPainter
     }
 
     /// <summary>
-    /// Re-paints the cell background, respecting selection, so we can draw on top
-    /// without the default text rendering interfering.
+    /// Újrafesti a cella hátterét — a kijelölést is figyelembe véve —, hogy
+    /// utána ráfesthessünk anélkül, hogy az alapértelmezett szöveg-rendering
+    /// belezavarna.
     /// </summary>
     private static void PaintCellBackground(DataGridViewCellPaintingEventArgs e)
     {
@@ -76,7 +77,7 @@ internal static class StatusCellPainter
         using (var brush = new SolidBrush(bg))
             g.FillRectangle(brush, e.CellBounds);
 
-        // Bottom row separator like in the reference design.
+        // Alsó sor-elválasztó, ahogy a referencia dizájnban.
         using (var pen = new Pen(Theme.GridLine))
             g.DrawLine(pen, e.CellBounds.Left, e.CellBounds.Bottom - 1,
                             e.CellBounds.Right, e.CellBounds.Bottom - 1);
@@ -94,9 +95,10 @@ internal static class StatusCellPainter
 
     private static (Color bg, Color fg) ResolveStatusColors(string? value)
     {
-        // Default to the soft pink pill — that's the "active" look in the reference.
-        // Some statuses ("Cancelled", etc.) get a neutral grey-beige variant so the
-        // user can tell them apart at a glance.
+        // Alapértelmezett a lágy rózsaszín pill — ez az „aktív" megjelenés
+        // a referenciában. Néhány állapot („Cancelled" stb.) semleges szürke-bézs
+        // változatot kap, így a felhasználó egy pillantással meg tudja
+        // különböztetni őket.
         if (string.IsNullOrWhiteSpace(value)) return (Theme.StatusPillNeutralBg, Theme.StatusPillNeutralText);
         var v = value.Trim().ToLowerInvariant();
         if (v.Contains("cancel") || v.Contains("töröl") || v.Contains("torol"))

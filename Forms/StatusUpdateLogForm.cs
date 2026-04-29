@@ -3,15 +3,17 @@ using HotcakesWinFormsApp.UI;
 namespace HotcakesWinFormsApp.Forms;
 
 /// <summary>
-/// Read-only dialog that displays the full request/response trace produced
-/// by <see cref="HotcakesWinFormsApp.Services.OrderStatusUpdateService"/>.
+/// Csak olvasható párbeszédablak, ami a teljes request / response trace-t
+/// jeleníti meg, amit a
+/// <see cref="HotcakesWinFormsApp.Services.OrderStatusUpdateService"/> termel.
 ///
-/// Shown automatically when an automatic status update fails so the user
-/// can copy the trace into a bug report. Also reachable on success via the
-/// "Részletek" (Details) button on the success message — useful for
-/// diagnosing edge cases while we're still confirming the endpoint.
+/// Megjegyzés: a jelenlegi UI a felhasználó kérésére már nem jeleníti meg ezt
+/// az ablakot — sem sikeres, sem sikertelen állapot-frissítés után.
+/// Az osztály a fájlban marad, hogy szükség esetén egy fejlesztő egyetlen
+/// soros hívással tudjon manuálisan diagnosztizálni
+/// (pl. egy helyi próbából a kódból).
 ///
-/// Visuals match the Pawpromise palette used elsewhere in the app.
+/// Vizuálisan az alkalmazás többi részében használt Pawpromise palettához igazodik.
 /// </summary>
 public class StatusUpdateLogForm : Form
 {
@@ -81,7 +83,7 @@ public class StatusUpdateLogForm : Form
         btnCopy.Click += (_, _) =>
         {
             try { Clipboard.SetText(log); }
-            catch { /* clipboard may be momentarily unavailable — ignore */ }
+            catch { /* a vágólap pillanatnyilag nem elérhető — figyelmen kívül hagyjuk */ }
         };
 
         var spacer = new Panel { Dock = DockStyle.Right, Width = 12, BackColor = Color.Transparent };
@@ -96,9 +98,10 @@ public class StatusUpdateLogForm : Form
             DialogResult = DialogResult.OK
         };
 
-        // Order matters for Dock.Right: last-added is processed first and ends
-        // up RIGHTMOST. We want [Másolás] [Bezárás] left-to-right, so add Copy
-        // first and Close last.
+        // A Dock.Right-nál fontos a sorrend: az utoljára hozzáadott vezérlő
+        // dolgozódik fel ELSŐKÉNT, és így a LEGJOBBOLDALIBB lesz. Mi balról
+        // jobbra a [Másolás] [Bezárás] sorrendet szeretnénk, ezért a Másolást
+        // adjuk hozzá először, a Bezárást utoljára.
         bottom.Controls.Add(btnCopy);
         bottom.Controls.Add(spacer);
         bottom.Controls.Add(btnClose);

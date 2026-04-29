@@ -6,23 +6,24 @@ using HotcakesWinFormsApp.UI;
 namespace HotcakesWinFormsApp.Forms;
 
 /// <summary>
-/// Replacement for the old LoginForm.
+/// A régi LoginForm helyettesítője.
 ///
-/// Instead of local username/password authentication, the user now configures
-/// the Hotcakes REST API connection directly:
-///   • Base URL    — e.g. http://4.231.236.217/
-///   • API Path    — e.g. DesktopModules/Hotcakes/API/rest/v1/
-///   • API Key     — pasted from DNN > Hotcakes > Configuration > API
+/// A felhasználónév / jelszó alapú helyi hitelesítés helyett a felhasználó
+/// most közvetlenül a Hotcakes REST API kapcsolatot konfigurálja:
+///   • Alap URL    — pl. http://4.231.236.217/
+///   • API útvonal — pl. DesktopModules/Hotcakes/API/rest/v1/
+///   • API kulcs   — DNN > Hotcakes > Configuration > API alól bemásolva
 ///
-/// Behavior:
-///   • Loads existing values from apisettings.json on open.
-///   • "Kapcsolat tesztelése" (Test connection) calls GET /orders with the
-///     entered values and reports success or the mapped error message.
-///   • "Mentés és folytatás" saves the values to apisettings.json, updates
-///     the global <c>Program.Settings.Hotcakes</c>, and closes with
-///     DialogResult.OK so the caller can proceed to MainForm.
+/// Viselkedés:
+///   • Megnyitáskor betölti a meglévő értékeket az apisettings.json-ból.
+///   • A „Kapcsolat tesztelése" GET /orders-t hív a beírt értékekkel, és
+///     jelenti a sikert vagy a leképezett hibaüzenetet.
+///   • A „Mentés és folytatás" elmenti az értékeket az apisettings.json-ba,
+///     frissíti a globális <c>Program.Settings.Hotcakes</c>-t, és
+///     DialogResult.OK-val zár, hogy a hívó a MainForm-ra folytathasson.
 ///
-/// Visuals match MainForm — wine header bar, white card body, rounded buttons.
+/// A megjelenés a MainForm-mal egyezik — bor fejléc, fehér kártya törzs,
+/// lekerekített gombok.
 /// </summary>
 public class ApiSettingsForm : Form
 {
@@ -51,10 +52,10 @@ public class ApiSettingsForm : Form
 
     public ApiSettingsForm()
     {
-        // Load existing settings (file may not exist — defaults are blank)
+        // Meglévő beállítások betöltése (a fájl lehet, hogy nincs — ekkor üres alapértékek)
         _store = ApiSettingsStore.Load();
 
-        // Seed blank fields from appsettings.json so the user has sensible defaults
+        // Az üres mezőket az appsettings.json-ból szedjük, hogy legyenek értelmes alapok
         if (string.IsNullOrWhiteSpace(_store.BaseUrl))
             _store.BaseUrl = Program.Settings.Hotcakes.BaseUrl;
         if (string.IsNullOrWhiteSpace(_store.ApiBasePath))
@@ -68,7 +69,7 @@ public class ApiSettingsForm : Form
     private void InitializeComponent()
     {
         Text = "API kapcsolat beállítása";
-        // DPI-consistent scaling — see MainForm for the rationale.
+        // DPI-konzisztens skálázás — az indoklást lásd a MainForm-ban.
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScaleDimensions = new SizeF(96F, 96F);
 
@@ -81,7 +82,7 @@ public class ApiSettingsForm : Form
         Font = Theme.BodyFont;
         BackColor = Theme.PageBg;
 
-        // ── Header bar ────────────────────────────────────────────────────
+        // ── Fejléc csík ────────────────────────────────────────────────────
         _header = new AppHeaderBar
         {
             Title = "PAWPROMISE BEÁLLÍTÁSOK",
@@ -89,7 +90,7 @@ public class ApiSettingsForm : Form
         };
         Controls.Add(_header);
 
-        // ── Card body ─────────────────────────────────────────────────────
+        // ── Kártya törzs ──────────────────────────────────────────────────
         var bodyHost = new Panel
         {
             Dock = DockStyle.Fill,
@@ -122,25 +123,25 @@ public class ApiSettingsForm : Form
             Location = new Point(2, 32)
         };
 
-        // Field widths are tracked via Anchor so the form scales nicely if
-        // the user resizes within the allowed range.
+        // A mező-szélességeket Anchor-ral követjük, így a form szépen skálázódik,
+        // ha a felhasználó a megengedett tartományon belül átméretezi.
         const int fieldLeft = 2;
         const int fieldWidth = 488;
 
-        // ── Base URL field ────────────────────────────────────────────────
+        // ── Alap URL mező ─────────────────────────────────────────────────
         _lblBaseUrl = MakeFieldLabel("Alap URL",  new Point(fieldLeft, 70));
         _txtBaseUrl = MakeFieldTextBox(new Point(fieldLeft, 92), fieldWidth, _store.BaseUrl);
 
-        // ── API path field ────────────────────────────────────────────────
+        // ── API elérési út mező ───────────────────────────────────────────
         _lblApiPath = MakeFieldLabel("API elérési út", new Point(fieldLeft, 132));
         _txtApiPath = MakeFieldTextBox(new Point(fieldLeft, 154), fieldWidth, _store.ApiBasePath);
 
-        // ── API key field ─────────────────────────────────────────────────
+        // ── API kulcs mező ────────────────────────────────────────────────
         _lblApiKey = MakeFieldLabel("API kulcs", new Point(fieldLeft, 194));
         _txtApiKey = MakeFieldTextBox(new Point(fieldLeft, 216), fieldWidth, _store.ApiKey);
-        _txtApiKey.UseSystemPasswordChar = true;  // masked — treat it like a secret
+        _txtApiKey.UseSystemPasswordChar = true;  // maszkolt — kezeljük titokként
 
-        // ── Buttons ───────────────────────────────────────────────────────
+        // ── Gombok ────────────────────────────────────────────────────────
         _btnTest = new ModernButton
         {
             Text = "Kapcsolat tesztelése",
@@ -159,7 +160,7 @@ public class ApiSettingsForm : Form
         };
         _btnSave.Click += (_, _) => SaveAndClose();
 
-        // ── Status label (shared for test results + validation) ──────────
+        // ── Státusz címke (megosztott a teszt eredményhez és a validációhoz) ──
         _lblStatus = new Label
         {
             AutoSize = false,
@@ -182,7 +183,7 @@ public class ApiSettingsForm : Form
         bodyHost.Controls.Add(_card);
         Controls.Add(bodyHost);
 
-        // Pressing Enter in the API key field triggers save
+        // Az API kulcs mezőben az Enter mentést indít.
         _txtApiKey.KeyDown += (_, e) =>
         {
             if (e.KeyCode == Keys.Enter) SaveAndClose();
@@ -213,12 +214,13 @@ public class ApiSettingsForm : Form
     };
 
     // ──────────────────────────────────────────────────────────────────────
-    // Actions
+    // Műveletek
     // ──────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Calls GET /orders with the currently-entered settings and reports the
-    /// outcome. Uses a temporary AppSettings so the user can test unsaved values.
+    /// GET /orders-t hív a jelenleg beírt beállításokkal, és jelenti az
+    /// eredményt. Ideiglenes AppSettings-et használ, így a felhasználó
+    /// mentés ELŐTT is tesztelhet.
     /// </summary>
     private async Task TestConnectionAsync()
     {
@@ -230,8 +232,8 @@ public class ApiSettingsForm : Form
 
         try
         {
-            // Build a one-off AppSettings with the currently-entered values,
-            // not the persisted ones — so the user can test before saving.
+            // Egyszer használatos AppSettings a JELENLEG BEÍRT értékekkel
+            // (nem a perzisztáltakkal) — így a felhasználó mentés előtt tesztelhet.
             var probeSettings = new AppSettings
             {
                 Hotcakes = new HotcakesSettings
@@ -264,8 +266,8 @@ public class ApiSettingsForm : Form
     }
 
     /// <summary>
-    /// Persists the entered settings to apisettings.json, mirrors them into
-    /// the global Program.Settings.Hotcakes, and closes with DialogResult.OK.
+    /// Elmenti a beírt beállításokat az apisettings.json-ba, leképezi a
+    /// globális Program.Settings.Hotcakes-be, és DialogResult.OK-val zár.
     /// </summary>
     private void SaveAndClose()
     {
@@ -287,8 +289,8 @@ public class ApiSettingsForm : Form
             return;
         }
 
-        // Mirror into the live AppSettings so the rest of the app uses the
-        // just-saved values without a restart.
+        // Leképezzük az élő AppSettings-be, hogy az alkalmazás többi része
+        // újraindítás nélkül a most mentett értékeket használja.
         Program.Settings.Hotcakes.BaseUrl     = _store.BaseUrl;
         Program.Settings.Hotcakes.ApiBasePath = _store.ApiBasePath;
         Program.Settings.Hotcakes.ApiKey      = _store.ApiKey;
@@ -298,7 +300,7 @@ public class ApiSettingsForm : Form
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // Helpers
+    // Segédek
     // ──────────────────────────────────────────────────────────────────────
 
     private bool ValidateInputs(bool requireApiKey)

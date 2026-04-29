@@ -3,41 +3,44 @@ using System.Net;
 namespace HotcakesWinFormsApp.Helpers;
 
 /// <summary>
-/// Converts technical API/network exceptions into user-friendly Hungarian messages.
+/// Műszaki API / hálózati kivételeket alakít át felhasználóbarát magyar
+/// üzenetekké.
 ///
-/// Use this class inside service methods (not in forms) so that UI code stays clean
-/// and only sees localized, human-readable strings.
+/// Ezt az osztályt a szerviz metódusokban használd (nem a form-okban), hogy
+/// az UI kód tiszta maradjon, és csak honosított, ember által olvasható
+/// szövegeket lásson.
 ///
-/// Usage example:
+/// Példa használat:
 ///   catch (TaskCanceledException) { return (empty, ApiExceptionMapper.MapTimeout()); }
 ///   catch (HttpRequestException ex) { return (empty, ApiExceptionMapper.MapHttpRequest(ex)); }
 /// </summary>
 public static class ApiExceptionMapper
 {
-    /// <summary>Maps a request timeout (TaskCanceledException without explicit cancellation).</summary>
+    /// <summary>Időtúllépés leképezése (TaskCanceledException explicit cancellation nélkül).</summary>
     public static string MapTimeout() =>
         "Az API nem válaszol időben. Kérjük, próbálja újra később.\n" +
         "Lehetséges, hogy a szerver átmenetileg nem elérhető.";
 
-    /// <summary>Maps a user-initiated cancellation.</summary>
+    /// <summary>Felhasználó által kezdeményezett megszakítás leképezése.</summary>
     public static string MapCancelled() =>
         "A kérés megszakadt.";
 
     /// <summary>
-    /// Maps an HttpRequestException — covers both network-level errors (no status code)
-    /// and HTTP error responses (4xx/5xx captured in ex.StatusCode).
+    /// HttpRequestException leképezése — lefedi a hálózati szintű hibákat
+    /// (státuszkód nélkül) és a HTTP hibaválaszokat is (4xx/5xx, az
+    /// ex.StatusCode-ban).
     /// </summary>
     public static string MapHttpRequest(HttpRequestException ex)
     {
         if (ex.StatusCode.HasValue)
             return MapHttpStatus((int)ex.StatusCode, ex.Message);
 
-        // No HTTP status code → network-layer failure (DNS, refused, unreachable)
+        // Nincs HTTP státuszkód → hálózati rétegbeli hiba (DNS, refused, unreachable).
         return "Nem sikerült kapcsolódni a szerverhez.\n" +
                "Ellenőrizze az internetkapcsolatot, a szerver elérhetőségét és az API URL-t.";
     }
 
-    /// <summary>Maps a raw HTTP status code (for use after response.IsSuccessStatusCode check).</summary>
+    /// <summary>Nyers HTTP státuszkód leképezése (response.IsSuccessStatusCode ellenőrzés után használandó).</summary>
     public static string MapHttpStatus(int statusCode, string? detail = null)
     {
         return statusCode switch
@@ -61,8 +64,8 @@ public static class ApiExceptionMapper
     }
 
     /// <summary>
-    /// Maps the case where HTTP was successful but JSON could not be deserialized.
-    /// All JSON parse attempts failed.
+    /// Az az eset, amikor a HTTP hívás sikeres volt, de a JSON-t nem sikerült
+    /// deszerializálni. Minden JSON parse-kísérlet meghiúsult.
     /// </summary>
     public static string MapDeserialization() =>
         "A szerver válasza beérkezett, de az adatok feldolgozása nem sikerült.\n" +
@@ -70,12 +73,12 @@ public static class ApiExceptionMapper
         "A nyers JSON a Debug kimenetben látható ([HotcakesAPI] előtag).";
 
     /// <summary>
-    /// Maps the case where the API returned Errors in the response envelope.
+    /// Amikor az API a response envelope-ban hibákat adott vissza.
     /// </summary>
     public static string MapApiErrors(string errors) =>
         $"Az API hibaüzenetet küldött vissza:\n{errors}";
 
-    /// <summary>Catch-all for truly unexpected exceptions.</summary>
+    /// <summary>Végső gyűjtő-eset valóban váratlan kivételekhez.</summary>
     public static string MapUnexpected(Exception ex) =>
         $"Váratlan hiba történt: {ex.Message}";
 }

@@ -3,22 +3,23 @@ using System.Text.Json.Serialization;
 namespace HotcakesWinFormsApp.Models;
 
 /// <summary>
-/// Represents a billing or shipping address as returned by Hotcakes Commerce.
-/// Null-safe: all string properties default to "".
-/// FullName and FullAddress return "" when the data is absent —
-/// callers should check IsNullOrWhiteSpace before displaying.
+/// A Hotcakes Commerce által visszaadott számlázási vagy szállítási címet
+/// reprezentálja.
+/// Null-biztos: minden string tulajdonság alapértelmezetten "".
+/// A FullName és FullAddress üres karakterláncot ad vissza, ha nincs adat —
+/// a hívóknak IsNullOrWhiteSpace-szel kell ellenőrizniük megjelenítés előtt.
 /// </summary>
 public class AddressInfo
 {
-    /// <summary>Hotcakes internal GUID for this address record. May be empty.</summary>
+    /// <summary>A cím rekordhoz tartozó belső Hotcakes GUID. Lehet üres.</summary>
     [JsonPropertyName("Bvin")]
     public string Bvin { get; set; } = "";
 
-    /// <summary>Integer store ID on the address record. API sends as number.</summary>
+    /// <summary>A cím rekord egész számos bolt-azonosítója. Az API számként küldi.</summary>
     [JsonPropertyName("StoreId")]
     public int StoreId { get; set; }
 
-    /// <summary>Address type enum (e.g. 0=General, 1=Billing, 2=Shipping). API sends as number.</summary>
+    /// <summary>Cím típus enum (pl. 0=Általános, 1=Számlázási, 2=Szállítási). Az API számként küldi.</summary>
     [JsonPropertyName("AddressType")]
     public int AddressType { get; set; }
 
@@ -28,7 +29,7 @@ public class AddressInfo
     [JsonPropertyName("LastName")]
     public string LastName { get; set; } = "";
 
-    /// <summary>Company name. May be empty for private individuals.</summary>
+    /// <summary>Cégnév. Magánszemélyeknél lehet üres.</summary>
     [JsonPropertyName("Company")]
     public string Company { get; set; } = "";
 
@@ -54,15 +55,17 @@ public class AddressInfo
     public string Phone { get; set; } = "";
 
     /// <summary>
-    /// Combined first + last name. Returns "" if both are empty.
-    /// Callers should check IsNullOrWhiteSpace and fall back to a different field.
+    /// Egyesített kereszt- és vezetéknév. Üres karakterláncot ad vissza, ha
+    /// mindkettő üres. A hívóknak IsNullOrWhiteSpace-szel kell ellenőrizniük,
+    /// és más mezőre kell visszaesniük.
     /// </summary>
     [JsonIgnore]
     public string FullName => $"{FirstName} {LastName}".Trim();
 
     /// <summary>
-    /// Multi-line formatted address. Returns "" if all address parts are empty.
-    /// Suitable for PDF labels and invoice display.
+    /// Több soros formátumú cím. Üres karakterláncot ad vissza, ha minden
+    /// cím-elem üres.
+    /// PDF címkékhez és számla megjelenítéshez alkalmas.
     /// </summary>
     [JsonIgnore]
     public string FullAddress

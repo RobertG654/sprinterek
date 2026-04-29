@@ -4,87 +4,86 @@ using System.Text.Json.Serialization;
 namespace HotcakesWinFormsApp.Configuration;
 
 /// <summary>
-/// Company information used as the "seller" (ELADÓ) block on generated invoices.
+/// A generált számlák „ELADÓ" blokkjához használt cégadatok.
 ///
-/// Loaded from <c>companysettings.json</c> sitting next to the executable
-/// (AppContext.BaseDirectory). If the file does not exist on first run it is
-/// created automatically with placeholder default values so the user has a
-/// template to edit.
+/// A futtatható mellett található <c>companysettings.json</c>-ból töltődik be
+/// (AppContext.BaseDirectory). Ha a fájl az első induláskor nem létezik,
+/// automatikusan létrejön placeholder alapértelmezett értékekkel, hogy a
+/// felhasználónak legyen egy szerkeszthető sablonja.
 ///
-/// USAGE:
+/// HASZNÁLAT:
 ///   var company = CompanySettings.LoadOrCreate();
-///   // then pass to InvoiceTemplateService
+///   // majd átadás az InvoiceTemplateService-nek
 ///
-/// SERIALIZATION:
-///   Uses the default System.Text.Json serializer with pretty-printing.
-///   File is UTF-8 encoded.
+/// SZERIALIZÁCIÓ:
+///   Az alapértelmezett System.Text.Json szerializálót használja, szépen
+///   formázott (indented) kimenettel. A fájl UTF-8 kódolású.
 /// </summary>
 public class CompanySettings
 {
-    // ── Identity ──────────────────────────────────────────────────────────
-    /// <summary>Company legal name that appears as "ELADÓ" on the invoice.</summary>
-    public string CompanyName { get; set; } = "Paw Promise Kft.";
+    // ── Cég azonosító adatok ──────────────────────────────────────────────
+    /// <summary>A cég hivatalos neve, ami „ELADÓ"-ként jelenik meg a számlán.</summary>
+    public string CompanyName { get; set; } = "Demo Webshop Kft.";
 
-    /// <summary>Hungarian tax/VAT number (Adószám).</summary>
-    public string TaxNumber { get; set; } = "12345678-1-41";
+    /// <summary>Magyar adószám / áfa szám (Adószám).</summary>
+    public string TaxNumber { get; set; } = "12345678-2-41";
 
     /// <summary>
-    /// Company registration number (Cégjegyzékszám). Optional — when empty,
-    /// the line is omitted from the invoice.
+    /// Cégjegyzékszám. Opcionális — ha üres, a sor kimarad a számláról.
     /// </summary>
     public string RegistrationNumber { get; set; } = "";
 
-    // ── Contact ───────────────────────────────────────────────────────────
-    /// <summary>Postal address of the company (single line).</summary>
+    // ── Kapcsolat ─────────────────────────────────────────────────────────
+    /// <summary>A cég postacíme (egy sorban).</summary>
     public string Address { get; set; } = "Minta utca 1., 1000 Budapest";
 
-    /// <summary>Contact email printed on the invoice.</summary>
+    /// <summary>A számlán szereplő kapcsolattartási e-mail.</summary>
     public string Email { get; set; } = "info@pawpromise.hu";
 
-    /// <summary>Contact phone number printed on the invoice.</summary>
+    /// <summary>A számlán szereplő kapcsolattartási telefonszám.</summary>
     public string Phone { get; set; } = "+36 1 234 5678";
 
-    /// <summary>Company website. Optional — when empty, the line is omitted from the invoice.</summary>
-    public string Website { get; set; } = "http://4.231.236.217/";
+    /// <summary>Cég weboldal. Opcionális — ha üres, a sor kimarad a számláról.</summary>
+    public string Website { get; set; } = "";
 
-    // ── Banking ───────────────────────────────────────────────────────────
-    /// <summary>Optional bank name printed alongside the bank account number.</summary>
+    // ── Banki adatok ──────────────────────────────────────────────────────
+    /// <summary>A bankszámlaszám mellett opcionálisan kiírt bank neve.</summary>
     public string BankName { get; set; } = "";
 
-    /// <summary>Optional bank account number. When empty, the line is omitted from the invoice.</summary>
+    /// <summary>Opcionális bankszámlaszám. Ha üres, a sor kimarad a számláról.</summary>
     public string BankAccount { get; set; } = "";
 
-    // ── Invoice document text (customizable disclaimers / titles) ─────────
-    /// <summary>Heading printed on the invoice (default: "SZÁMLA").</summary>
+    // ── Számla dokumentum testreszabható szövegei ─────────────────────────
+    /// <summary>A számla bal felső sarkában megjelenő nagy cím (alapértelmezetten „SZÁMLA").</summary>
     public string InvoiceTitle { get; set; } = "SZÁMLA";
 
     /// <summary>
-    /// Optional subtitle below the invoice heading (e.g., "Demo bizonylat —
-    /// nem hivatalos számla"). Set to empty string to remove the disclaimer.
+    /// Opcionális alcím a számla cím alatt (pl. „Demo bizonylat — nem hivatalos
+    /// számla"). Üres karakterláncra állítva eltűnik a disclaimer.
     /// </summary>
     public string InvoiceSubtitle { get; set; } = "Demo bizonylat — nem hivatalos számla";
 
     /// <summary>
-    /// Prefix used in the auto-generated invoice ID printed in the top-right
-    /// corner. Default "DEMO" — replace with your company's invoice prefix
-    /// (e.g., "INV", "SZ", "2026-").
+    /// A jobb felső sarokban automatikusan generált számla-azonosító előtagja.
+    /// Alapértelmezett: „DEMO" — érdemes a saját cég számla-előtagjára cserélni
+    /// (pl. „INV", „SZ", „2026-").
     /// </summary>
     public string InvoiceIdPrefix { get; set; } = "DEMO";
 
     /// <summary>
-    /// Disclaimer text printed in the page footer. Set to empty string to
-    /// hide the footer note completely.
+    /// A lap alján megjelenő disclaimer szöveg. Üres karakterlánc esetén a
+    /// lábjegyzet teljesen kimarad.
     /// </summary>
     public string InvoiceFooterNote { get; set; } =
         "Ez egy DEMO számla. Nem érvényes pénzügyi bizonylat. " +
         "Jogi megfelelőséghez hitelesített számlázó program szükséges.";
 
     // ──────────────────────────────────────────────────────────────────────
-    // Persistence
+    // Perzisztencia
     // ──────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Absolute path to the companysettings.json file — always next to the executable.
+    /// A companysettings.json abszolút útvonala — mindig a futtatható mellett.
     /// </summary>
     [JsonIgnore]
     public static string FilePath => Path.Combine(AppContext.BaseDirectory, "companysettings.json");
@@ -92,18 +91,19 @@ public class CompanySettings
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
-        PropertyNamingPolicy = null // keep PascalCase property names for readability
+        PropertyNamingPolicy = null // PascalCase tulajdonságnevek megtartása az olvashatóság érdekében
     };
 
     /// <summary>
-    /// Loads company settings from disk. Creates the file with default values
-    /// if it is missing, so the user can just edit it afterwards.
-    /// Also re-saves the file when deserialization fails (corrupted JSON)
-    /// — replacing it with a valid default template.
+    /// Betölti a cégadatokat a lemezről. Ha a fájl hiányzik, alapértelmezett
+    /// értékekkel létrehozza, hogy a felhasználó utána már csak szerkeszteni
+    /// kelljen. Sérült (nem-deszerializálható) JSON esetén szintén újraírja —
+    /// érvényes alapértelmezett sablonra cserélve.
     ///
-    /// <para>If the file exists but is missing newly-introduced fields (e.g.,
-    /// after an app upgrade), the file is re-saved so all available fields
-    /// become visible for editing without the user having to add them by hand.</para>
+    /// <para>Ha a fájl létezik, de újonnan bevezetett mezők hiányoznak belőle
+    /// (pl. egy app-frissítés után), a fájl újra mentődik, hogy minden elérhető
+    /// mező látható és szerkeszthető legyen anélkül, hogy a felhasználónak
+    /// kézzel kellene felvennie őket.</para>
     /// </summary>
     public static CompanySettings LoadOrCreate()
     {
@@ -125,10 +125,10 @@ public class CompanySettings
                 return defaults;
             }
 
-            // Detect "old" JSON files written before new fields were added by
-            // counting top-level property keys against the current model. When
-            // they differ, re-serialise so the file gains the missing fields
-            // populated with their C# defaults — making them editable.
+            // „Régi" JSON fájlok detektálása: a lemezen lévő gyökér-szintű kulcsok
+            // halmazát összevetjük a jelenlegi modell tulajdonságaival. Ha
+            // különböznek, újra szerializálunk, hogy a fájl megkapja a hiányzó
+            // mezőket a C# alapértelmezett értékeikkel — szerkeszthetővé téve őket.
             try
             {
                 using var doc = JsonDocument.Parse(json);
@@ -141,18 +141,19 @@ public class CompanySettings
                 if (!modelKeys.IsSubsetOf(diskKeys))
                     loaded.Save();
             }
-            catch { /* parsing the disk JSON for diff is best-effort only */ }
+            catch { /* a lemez JSON parse-olása csak best-effort összehasonlítás miatt fut */ }
 
             return loaded;
         }
         catch (Exception)
         {
-            // On any I/O or JSON error, fall back to defaults without crashing the app.
+            // Bármilyen IO vagy JSON hibára visszaesünk az alapértelmezettekre,
+            // anélkül hogy az alkalmazás összeomlana.
             return new CompanySettings();
         }
     }
 
-    /// <summary>Writes the current settings to disk as pretty-printed JSON.</summary>
+    /// <summary>A jelenlegi beállításokat szépen formázott JSON-ként a lemezre írja.</summary>
     public void Save()
     {
         var json = JsonSerializer.Serialize(this, JsonOptions);

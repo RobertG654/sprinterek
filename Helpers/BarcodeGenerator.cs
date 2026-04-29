@@ -8,30 +8,31 @@ using ZXing.Rendering;
 namespace HotcakesWinFormsApp.Helpers;
 
 /// <summary>
-/// Generates real CODE_128 barcodes using ZXing.Net.
+/// Valódi CODE_128 vonalkódokat generál a ZXing.Net segítségével.
 ///
-/// Why CODE_128:
-///   • Broad character support (letters, digits, common symbols) — handles
-///     both numeric OrderNumbers like "1001" and GUID-style Bvins.
-///   • Compact encoding, widely supported by label printers and scanners.
+/// Miért CODE_128:
+///   • Széles karakterkészlet támogatás (betűk, számjegyek, gyakori szimbólumok)
+///     — kezeli a numerikus OrderNumber-eket („1001") és a GUID-stílusú Bvin-eket is.
+///   • Tömör kódolás, széles körben támogatott a címkenyomtatók és szkennerek által.
 ///
-/// Output shape:
-///   • Returns a PNG byte array ready to hand to QuestPDF's .Image(bytes).
-///   • Uses <see cref="BarcodeWriterPixelData"/> from core ZXing.Net so we
-///     don't depend on the Windows-specific bindings package — pixels are
-///     turned into a System.Drawing Bitmap (available via WinForms) and
-///     then encoded as PNG.
+/// Kimenet:
+///   • PNG byte tömböt ad vissza, amit közvetlenül át lehet adni a QuestPDF
+///     .Image(bytes) metódusának.
+///   • A core ZXing.Net <see cref="BarcodeWriterPixelData"/>-t használja, így nem
+///     függünk a Windows-specifikus binding csomagtól — a pixeleket egy
+///     System.Drawing Bitmap-be (WinForms-on keresztül elérhető) másoljuk, majd
+///     PNG-ként kódoljuk.
 /// </summary>
 public static class BarcodeGenerator
 {
     /// <summary>
-    /// Generates a CODE_128 barcode PNG for the supplied content.
-    /// Returns null if content is empty or the encoder rejects it (rare, e.g.
-    /// illegal characters for the chosen format).
+    /// CODE_128 vonalkód PNG-t generál a megadott tartalomhoz.
+    /// Null-t ad vissza, ha a tartalom üres, vagy ha a kódoló elutasítja
+    /// (ritka, pl. a választott formátumhoz nem megengedett karakterek).
     /// </summary>
-    /// <param name="content">String to encode — use OrderNumber when available, Bvin otherwise.</param>
-    /// <param name="width">Target barcode width in pixels.</param>
-    /// <param name="height">Target barcode height in pixels.</param>
+    /// <param name="content">A kódolandó karakterlánc — ha van, OrderNumber, különben Bvin.</param>
+    /// <param name="width">A vonalkód célszélessége pixelben.</param>
+    /// <param name="height">A vonalkód célmagassága pixelben.</param>
     public static byte[]? GeneratePng(string content, int width = 300, int height = 70)
     {
         if (string.IsNullOrWhiteSpace(content)) return null;
@@ -46,8 +47,8 @@ public static class BarcodeGenerator
                     Width  = width,
                     Height = height,
                     Margin = 2,
-                    // Don't ask ZXing to pad the barcode with the raw text underneath —
-                    // the PDF template renders the order number itself with nicer typography.
+                    // Ne kérjük meg a ZXing-et, hogy a nyers szöveget alá tegye —
+                    // a PDF sablon szebb tipográfiával maga rendereli a rendelésszámot.
                     PureBarcode = true
                 }
             };
@@ -57,16 +58,16 @@ public static class BarcodeGenerator
         }
         catch
         {
-            // If encoding fails (unsupported character, internal error, etc.)
-            // we return null and the label falls back to text-only rendering.
+            // Ha a kódolás meghiúsul (nem támogatott karakter, belső hiba stb.),
+            // null-t adunk vissza, és a címke szövegre esik vissza.
             return null;
         }
     }
 
     /// <summary>
-    /// Picks the best human-readable content for a barcode: prefers OrderNumber
-    /// (short, printable) and falls back to Bvin (GUID) when the order has not
-    /// been finalised yet.
+    /// Kiválasztja a legjobb ember által olvasható tartalmat a vonalkódhoz:
+    /// elsőbbséget élvez az OrderNumber (rövid, nyomtatható), és visszaesik a
+    /// Bvin-re (GUID), ha a rendelés még nem véglegesített.
     /// </summary>
     public static string ResolveBarcodeContent(string orderNumber, string bvin)
     {
@@ -76,12 +77,13 @@ public static class BarcodeGenerator
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // Private helpers
+    // Privát segédmetódusok
     // ──────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// ZXing produces BGRA pixel data (4 bytes per pixel). We copy it into a
-    /// 32bpp ARGB System.Drawing Bitmap and then save as PNG in memory.
+    /// A ZXing BGRA pixeladatokat ad ki (pixelenként 4 byte). Átmásoljuk
+    /// egy 32bpp ARGB System.Drawing Bitmap-be, majd memóriából PNG-ként
+    /// mentjük el.
     /// </summary>
     private static byte[] ConvertBgraToPng(PixelData pixelData)
     {

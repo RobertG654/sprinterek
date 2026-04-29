@@ -1,7 +1,7 @@
 namespace HotcakesWinFormsApp.Configuration;
 
 /// <summary>
-/// Root settings object bound from appsettings.json.
+/// Gyökér beállítás-objektum, az appsettings.json-ból töltődik be.
 /// </summary>
 public class AppSettings
 {
@@ -9,39 +9,40 @@ public class AppSettings
     public DemoLoginSettings DemoLogin { get; set; } = new();
 
     /// <summary>
-    /// When true, the app uses built-in mock data instead of calling the live API.
-    /// Set to true in appsettings.json to demo the UI without a server connection.
+    /// Ha igaz, az alkalmazás beépített mintaadatokat használ az élő API helyett.
+    /// Az appsettings.json-ban true értékre állítva az UI szerver kapcsolat nélkül
+    /// is bemutatható.
     /// </summary>
     public bool UseMockData { get; set; } = false;
 }
 
 /// <summary>
-/// Hotcakes Commerce API connection settings.
+/// Hotcakes Commerce API kapcsolati beállítások.
 /// </summary>
 public class HotcakesSettings
 {
     /// <summary>
-    /// Base URL of the DotNetNuke site.
-    /// Example: "http://4.231.236.217/"
+    /// A DotNetNuke oldal alap URL-je.
+    /// Példa: "http://4.231.236.217/"
     /// </summary>
     public string BaseUrl { get; set; } = "http://localhost/";
 
     /// <summary>
-    /// Path to the Hotcakes REST API under the base URL.
-    /// Final request URL = BaseUrl.TrimEnd('/') + "/" + ApiBasePath.Trim('/') + "/" + endpoint
-    /// Example: "DesktopModules/Hotcakes/API/rest/v1/"
+    /// A Hotcakes REST API elérési útja az alap URL alatt.
+    /// Végső kérés URL = BaseUrl.TrimEnd('/') + "/" + ApiBasePath.Trim('/') + "/" + endpoint
+    /// Példa: "DesktopModules/Hotcakes/API/rest/v1/"
     /// </summary>
     public string ApiBasePath { get; set; } = "DesktopModules/Hotcakes/API/rest/v1/";
 
     /// <summary>
-    /// API key created in Hotcakes Admin > Configuration > API.
-    /// Sent as HTTP header X-HCC-APIKEY on every request.
+    /// A Hotcakes Admin > Configuration > API alatt létrehozott API kulcs.
+    /// Minden kérésnél X-HCC-APIKEY HTTP fejlécben kerül elküldésre.
     /// </summary>
     public string ApiKey { get; set; } = "";
 }
 
 /// <summary>
-/// Demo login credentials (no server authentication — local check only).
+/// Demó bejelentkezési adatok (nincs szerveroldali hitelesítés — csak helyi ellenőrzés).
 /// </summary>
 public class DemoLoginSettings
 {

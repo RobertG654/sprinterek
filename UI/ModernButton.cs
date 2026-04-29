@@ -4,18 +4,19 @@ using System.Windows.Forms;
 namespace HotcakesWinFormsApp.UI;
 
 /// <summary>
-/// Clean rounded button — inherits from <see cref="Control"/> rather than
-/// <see cref="Button"/> so we own the entire paint pipeline. No fighting with
-/// the base class's focus rectangle, no double-painted text, no flickering
-/// hover transitions.
+/// Tiszta, lekerekített gomb — a <see cref="Control"/>-ból származik, nem a
+/// <see cref="Button"/>-ból, így mi birtokoljuk a teljes paint pipeline-t.
+/// Nincs harc az ősosztály fókusz-téglalapjával, nincs duplán festett szöveg,
+/// nincs villogó hover-átmenet.
 ///
-/// Two visual variants:
-///   • <see cref="ButtonStyle.Primary"/> — solid wine fill, white text. Hero actions.
-///   • <see cref="ButtonStyle.Ghost"/>   — transparent fill with a thin wine border.
-///                                         Secondary / cancel actions.
+/// Két vizuális változat:
+///   • <see cref="ButtonStyle.Primary"/> — tömör bor kitöltés, fehér szöveg.
+///                                         Hős akciókhoz.
+///   • <see cref="ButtonStyle.Ghost"/>   — átlátszó kitöltés, vékony bor szegély.
+///                                         Másodlagos / mégse akciókhoz.
 ///
-/// Implements <see cref="IButtonControl"/> so it works with
-/// <c>Form.AcceptButton</c> / <c>Form.CancelButton</c>.
+/// Implementálja az <see cref="IButtonControl"/>-t, így működik a
+/// <c>Form.AcceptButton</c> / <c>Form.CancelButton</c>-nal.
 /// </summary>
 internal class ModernButton : Control, IButtonControl
 {
@@ -32,7 +33,7 @@ internal class ModernButton : Control, IButtonControl
         set { _style = value; Invalidate(); }
     }
 
-    /// <summary>Corner radius in pixels. 10 by default — clean and subtle.</summary>
+    /// <summary>Sarok-sugár pixelben. Alapértelmezetten 10 — tiszta és visszafogott.</summary>
     public int CornerRadius { get; set; } = 10;
 
     public DialogResult DialogResult { get; set; } = DialogResult.None;
@@ -67,7 +68,7 @@ internal class ModernButton : Control, IButtonControl
         if (CanSelect) OnClick(EventArgs.Empty);
     }
 
-    // ── Mouse / keyboard state ──────────────────────────────────────────────
+    // ── Egér / billentyűzet állapot ─────────────────────────────────────────
     protected override void OnMouseEnter(EventArgs e) { _hover = true;  Invalidate(); base.OnMouseEnter(e); }
     protected override void OnMouseLeave(EventArgs e) { _hover = false; _pressed = false; Invalidate(); base.OnMouseLeave(e); }
     protected override void OnMouseDown(MouseEventArgs e)
@@ -101,12 +102,12 @@ internal class ModernButton : Control, IButtonControl
         base.OnKeyUp(e);
     }
 
-    // Show a subtle focus ring only when the button has focus AND the mouse
-    // isn't currently over it. This avoids a stale ring lingering after a
-    // click while still giving keyboard users a visible target.
+    // Csak akkor mutatunk halvány fókusz-gyűrűt, ha a gombnak fókusza van ÉS
+    // az egér nem épp fölötte van. Így nem marad ott egy kattintás után
+    // ácsorgó gyűrű, miközben a billentyűzetes felhasználók kapnak látható célt.
     protected override bool ShowFocusCues => Focused && !_hover;
 
-    // ── Painting ────────────────────────────────────────────────────────────
+    // ── Festés ──────────────────────────────────────────────────────────────
     protected override void OnPaint(PaintEventArgs e)
     {
         var g = e.Graphics;
@@ -130,7 +131,7 @@ internal class ModernButton : Control, IButtonControl
             g.DrawPath(pen, path);
         }
 
-        // Text — drawn dead centre, no glyphs, no surprises.
+        // Szöveg — pontosan középre rajzolva, semmi extra glyph, semmi meglepetés.
         var caption = Text ?? "";
         if (caption.Length > 0)
         {
@@ -141,8 +142,8 @@ internal class ModernButton : Control, IButtonControl
                 TextFormatFlags.EndEllipsis);
         }
 
-        // Subtle keyboard focus ring — drawn just inside the rounded rect so it
-        // doesn't overlap the edge anti-aliasing.
+        // Halvány billentyűzet-fókusz gyűrű — épp a lekerekített téglalapon
+        // belülre rajzolva, hogy ne fedjen rá az él anti-aliasing-ára.
         if (Focused && ShowFocusCues)
         {
             var ringRect = new Rectangle(2, 2, Width - 5, Height - 5);
@@ -178,7 +179,7 @@ internal class ModernButton : Control, IButtonControl
         }
     }
 
-    /// <summary>Builds a rounded-rect GraphicsPath with the given corner radius.</summary>
+    /// <summary>Egy lekerekített GraphicsPath-t épít a megadott sarok-sugárral.</summary>
     public static GraphicsPath RoundedRect(Rectangle r, int radius)
     {
         int d = Math.Max(1, radius * 2);
@@ -197,4 +198,3 @@ internal class ModernButton : Control, IButtonControl
         return path;
     }
 }
-

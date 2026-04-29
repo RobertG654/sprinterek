@@ -7,29 +7,31 @@ using HotcakesWinFormsApp.ViewModels;
 namespace HotcakesWinFormsApp.Forms;
 
 /// <summary>
-/// Main application form.
+/// Az alkalmazás főablaka.
 ///
-/// Layout (visual redesign — Pawpromise palette):
-///   AppHeaderBar (wine bar with brand, API url, mock badge, refresh / settings buttons)
-///   Orders card:
-///     - section header ("RENDELÉSEK" + count)
-///     - search bar
-///     - DataGridView showing ONE page of 20 orders, with custom-painted status cells
-///     - pager (Prev / "Page X / Y" / Next)
-///   Lines card:
-///     - section header ("RENDELÉS TÉTELEI" + selected order number)
-///     - DataGridView with the items of the selected order
-///   Action strip at the bottom:
-///     - rounded "Számla generálás" / "Címke generálás" primary buttons
-///     - right-aligned ghost "Visszaállítás 'Received'" button
-///   StatusStrip at the very bottom
+/// Elrendezés (vizuális újratervezés — Pawpromise paletta):
+///   AppHeaderBar (bor csík márkával, API url-lel, mock jelvénnyel, frissítés /
+///   beállítások gombokkal)
+///   Rendelések kártya:
+///     - szekció fejléc („RENDELÉSEK" + darabszám)
+///     - kereső sáv
+///     - DataGridView, ami EGY oldalt mutat 20 rendeléssel, egyedileg festett
+///       állapot-cellákkal
+///     - lapozó (Előző / „Oldal X / Y" / Következő)
+///   Tételek kártya:
+///     - szekció fejléc („RENDELÉS TÉTELEI" + a kiválasztott rendelésszám)
+///     - DataGridView a kiválasztott rendelés tételeivel
+///   Akció csík alul:
+///     - lekerekített „Számla generálás" / „Címke generálás" elsődleges gombok
+///     - jobbra igazított ghost „Visszaállítás 'Received'-re" gomb
+///   StatusStrip a legalján
 ///
-/// SEARCH + PAGINATION are client-side only — no extra API calls are issued.
-/// FUNCTIONALITY IS UNCHANGED — only the visuals were reworked.
+/// A KERESÉS és a LAPOZÁS kizárólag kliensoldali — nincs extra API hívás.
+/// A FUNKCIONALITÁS VÁLTOZATLAN — csak a vizuálok lettek átalakítva.
 /// </summary>
 public class MainForm : Form
 {
-    // ── UI controls ──────────────────────────────────────────────────────────
+    // ── UI vezérlők ──────────────────────────────────────────────────────────
     private AppHeaderBar _headerBar = null!;
     private Label _lblApiUrl = null!;
     private Label _lblMockBadge = null!;
@@ -40,12 +42,12 @@ public class MainForm : Form
     private SectionHeader _ordersHeader = null!;
     private DataGridView _dgvOrders = null!;
 
-    // Search bar
+    // Kereső sáv
     private Panel _searchPanel = null!;
     private Label _lblSearch = null!;
     private TextBox _txtSearch = null!;
 
-    // Pagination controls
+    // Lapozó vezérlők
     private Panel _pagerPanel = null!;
     private ModernButton _btnPrevPage = null!;
     private ModernButton _btnNextPage = null!;
@@ -63,27 +65,28 @@ public class MainForm : Form
     private StatusStrip _statusStrip = null!;
     private ToolStripStatusLabel _lblStatus = null!;
 
-    // ── Services ─────────────────────────────────────────────────────────────
-    // Not readonly: when the user updates API settings via the in-app
-    // ApiSettingsForm we recreate these so the new URL/key takes effect
-    // without restarting the application.
+    // ── Szervizek ────────────────────────────────────────────────────────────
+    // Nem readonly: amikor a felhasználó az in-app ApiSettingsForm-on át
+    // frissíti az API beállításokat, ezeket újra létrehozzuk, hogy az új
+    // URL / kulcs azonnal érvénybe lépjen — anélkül, hogy újra kellene
+    // indítani az alkalmazást.
     private HotcakesApiService _apiService;
     private readonly PdfService _pdfService;
     private OrderStatusUpdateService _statusService;
 
-    // ── State ────────────────────────────────────────────────────────────────
+    // ── Állapot ──────────────────────────────────────────────────────────────
     private OrderDetail? _selectedOrder;
     private List<OrderViewModel> _allOrders = new();
     private List<OrderViewModel> _filteredOrders = new();
 
-    // Pagination state
+    // Lapozó állapot
     private const int _pageSize = 20;
     private int _currentPage = 1;
     private int _totalPages = 1;
 
-    // Indices of the cell-painted columns in each grid (resolved once after
-    // the grids are built so the CellPainting handlers don't have to look the
-    // names up on every paint).
+    // A két grid egyedileg festett oszlopainak indexei (a grid felépítése
+    // után egyszer megoldva, hogy a CellPainting handlernek ne kelljen minden
+    // egyes festéskor névből kikeresnie).
     private int _colPaymentIndex = -1;
     private int _colStatusIndex  = -1;
 
@@ -98,12 +101,12 @@ public class MainForm : Form
     private void InitializeComponent()
     {
         Text = "Pawpromise Rendelések";
-        // ── DPI-consistent scaling ───────────────────────────────────────────
-        // AutoScaleMode = Dpi pairs with the PerMonitorV2 application setting
-        // (see HotcakesWinFormsApp.csproj) so the form looks the same physical
-        // size on every monitor regardless of resolution. The AutoScaleDimensions
-        // baseline of 96 DPI is what WinForms uses when laying out the controls
-        // we coded by hand at design time.
+        // ── DPI-konzisztens skálázás ─────────────────────────────────────────
+        // Az AutoScaleMode = Dpi a PerMonitorV2 alkalmazás-szintű beállítással
+        // párban (lásd HotcakesWinFormsApp.csproj) garantálja, hogy a form
+        // fizikailag azonos méretben jelenik meg minden monitoron, függetlenül
+        // a felbontástól. A 96 DPI-s AutoScaleDimensions kiindulás az, amit a
+        // WinForms a kézzel kódolt elrendezés base-elésére használ.
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScaleDimensions = new SizeF(96F, 96F);
 
@@ -113,9 +116,9 @@ public class MainForm : Form
         Font = Theme.BodyFont;
         BackColor = Theme.PageBg;
 
-        // Docking is processed in REVERSE Z-order, so we add bottom-most things
-        // first and top-most last. End result, top-down: header bar, toolbar,
-        // body, status strip.
+        // A docking FORDÍTOTT Z-sorrendben dolgozódik fel: ezért az alulra
+        // szánt dolgokat adjuk hozzá először, a felülre kerülőket utoljára.
+        // Felülről lefelé az eredmény: fejléc csík, eszköztár, törzs, státusz csík.
         BuildStatusStrip();
         BuildBody();
         BuildToolbar();
@@ -124,21 +127,22 @@ public class MainForm : Form
         Load += async (_, _) => await LoadOrdersAsync();
     }
 
-    // ── UI Construction ──────────────────────────────────────────────────────
+    // ── UI felépítés ─────────────────────────────────────────────────────────
 
     private void BuildHeaderBar()
     {
-        // The wine bar is now visual-only — branding and the decorative admin
-        // avatar. Action buttons live on the toolbar below where ghost buttons
-        // can read clearly against the cream page background.
+        // A bor csík mostantól csak vizuális — márka és a dekoratív admin
+        // avatár. Az akció gombok a lenti eszköztáron élnek, ahol a ghost
+        // gombok jól olvashatók a krém színű háttéren.
         _headerBar = new AppHeaderBar { Title = "Pawpromise Rendelések" };
         Controls.Add(_headerBar);
     }
 
     /// <summary>
-    /// Toolbar row sitting between the wine header bar and the body cards.
-    /// Holds the API URL display, mock-mode badge, and the Refresh / API
-    /// settings ghost buttons. Cream background so the buttons read properly.
+    /// Eszköztár sor, ami a bor fejléc csík és a törzs kártyák között ül.
+    /// Tartalmazza az API URL kijelzést, a mock-mód jelvényt és a
+    /// Frissítés / API beállítások ghost gombokat. Krém háttér, hogy a
+    /// gombok rendesen olvashatók legyenek.
     /// </summary>
     private void BuildToolbar()
     {
@@ -179,9 +183,10 @@ public class MainForm : Form
         };
         _btnRefresh.Click += async (_, _) => await LoadOrdersAsync();
 
-        // Discoverable in-app way to update the API URL / key. Without this the
-        // user would have to delete bin\...\apisettings.json by hand to force the
-        // settings form to reappear (because that file overrides appsettings.json).
+        // Felderíthető, in-app mód az API URL / kulcs frissítésére. E nélkül
+        // a felhasználónak kézzel kellene törölnie a
+        // bin\...\apisettings.json fájlt ahhoz, hogy a beállító ablak újra
+        // megjelenjen (mivel ez a fájl felülírja az appsettings.json-t).
         _btnApiSettings = new ModernButton
         {
             Text = "API beállítások",
@@ -196,7 +201,7 @@ public class MainForm : Form
         toolbar.Controls.Add(_btnRefresh);
         toolbar.Controls.Add(_btnApiSettings);
 
-        // Pin the buttons to the right edge whenever the toolbar resizes.
+        // A gombok a jobb szélhez tapadnak, valahányszor az eszköztár átméreteződik.
         void PositionRightButtons()
         {
             _btnRefresh.Location     = new Point(toolbar.Width - 20 - _btnRefresh.Width, 9);
@@ -229,8 +234,9 @@ public class MainForm : Form
     }
 
     /// <summary>
-    /// Two stacked cards (orders / lines) plus an action button strip — laid out
-    /// with a TableLayoutPanel so the cards re-flow nicely when the form resizes.
+    /// Két egymásra rakott kártya (rendelések / tételek), plusz egy akció-gomb
+    /// csík — TableLayoutPanel-lel elrendezve, hogy a kártyák szépen
+    /// újrarendeződjenek, amikor a form átméreteződik.
     /// </summary>
     private void BuildBody()
     {
@@ -253,14 +259,15 @@ public class MainForm : Form
         bodyLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 40f));
         bodyLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 64f));
 
-        // ── Orders card ─────────────────────────────────────────────────────
+        // ── Rendelések kártya ───────────────────────────────────────────────
         _grpOrders = new CardPanel { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 12) };
         _ordersHeader = new SectionHeader { Title = "RENDELÉSEK", Hint = "" };
         _dgvOrders = CreateOrdersGrid();
         _searchPanel = CreateSearchPanel();
         _pagerPanel  = CreatePagerPanel();
 
-        // Add Fill (grid) first so docked Top/Bottom carve out from the edges.
+        // A Fill-t (grid) adjuk hozzá ELSŐKÉNT, hogy a Top/Bottom dock-oltak
+        // a szélekről metszhessenek le helyet.
         _grpOrders.Controls.Add(_dgvOrders);
         _grpOrders.Controls.Add(_pagerPanel);
         _grpOrders.Controls.Add(_searchPanel);
@@ -268,7 +275,7 @@ public class MainForm : Form
 
         bodyLayout.Controls.Add(_grpOrders, 0, 0);
 
-        // ── Lines card ──────────────────────────────────────────────────────
+        // ── Tételek kártya ──────────────────────────────────────────────────
         _grpLines = new CardPanel { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 12) };
         _linesHeader = new SectionHeader { Title = "RENDELÉS TÉTELEI", Hint = "" };
         _dgvLines = CreateLinesGrid();
@@ -290,7 +297,7 @@ public class MainForm : Form
 
         bodyLayout.Controls.Add(_grpLines, 0, 1);
 
-        // ── Action button strip ─────────────────────────────────────────────
+        // ── Akció gomb csík ─────────────────────────────────────────────────
         var btnPanel = new Panel
         {
             Dock = DockStyle.Fill,
@@ -312,8 +319,9 @@ public class MainForm : Form
             Size = new Size(180, 40),
             Location = new Point(192, 6)
         };
-        // Right-anchored "revert to Received" button. Only enabled when the currently
-        // selected order is in the Complete state (see OnOrderSelectedAsync).
+        // Jobb-anchorral pin-elt „visszaállítás Received-re" gomb. Csak akkor
+        // engedélyezett, ha a kiválasztott rendelés Complete állapotban van
+        // (lásd OnOrderSelectedAsync).
         _btnRevertToReceived = new ModernButton
         {
             Text = "Visszaállítás 'Received'-re",
@@ -327,7 +335,7 @@ public class MainForm : Form
         _btnRevertToReceived.Click += async (_, _) => await RevertOrderToReceivedAsync();
         btnPanel.Controls.AddRange(new Control[] { _btnInvoice, _btnLabel, _btnRevertToReceived });
 
-        // Initial position + keep pinned to the right when the form resizes.
+        // Kezdő pozíció + a form átméretezésekor maradjon a jobb szélen.
         void PositionRevertButton() =>
             _btnRevertToReceived.Location =
                 new Point(Math.Max(420, btnPanel.Width - _btnRevertToReceived.Width), 6);
@@ -340,7 +348,7 @@ public class MainForm : Form
         Controls.Add(bodyHost);
     }
 
-    /// <summary>Search bar docked to the top of the orders card (under the section header).</summary>
+    /// <summary>A rendelések kártya tetejére (a szekció fejléc alá) dockolt kereső sáv.</summary>
     private Panel CreateSearchPanel()
     {
         var panel = new Panel
@@ -382,7 +390,7 @@ public class MainForm : Form
         return panel;
     }
 
-    /// <summary>Pagination bar docked to the bottom of the orders card.</summary>
+    /// <summary>A rendelések kártya aljára dockolt lapozó sáv.</summary>
     private Panel CreatePagerPanel()
     {
         var panel = new Panel
@@ -427,7 +435,7 @@ public class MainForm : Form
         return panel;
     }
 
-    // ── Grid configuration ──────────────────────────────────────────────────
+    // ── Grid konfiguráció ──────────────────────────────────────────────────
 
     private DataGridView CreateOrdersGrid()
     {
@@ -504,7 +512,7 @@ public class MainForm : Form
         _colPaymentIndex = dgv.Columns["colPayment"]!.Index;
         _colStatusIndex  = dgv.Columns["colStatus"]!.Index;
 
-        // Custom-painted cells for the two visual statuses.
+        // Egyedileg festett cellák a két vizuális állapothoz.
         dgv.CellPainting += (_, e) =>
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
@@ -591,7 +599,7 @@ public class MainForm : Form
         return dgv;
     }
 
-    /// <summary>Shared base styling for both the orders and lines grids.</summary>
+    /// <summary>Közös alap-stílus a rendelések és a tételek grid-jéhez.</summary>
     private static DataGridView BuildStyledGrid()
     {
         var dgv = new DataGridView
@@ -639,7 +647,7 @@ public class MainForm : Form
             WrapMode = DataGridViewTriState.False
         };
 
-        // Bottom hairline for each row, mirroring the reference design's table style.
+        // Alsó hajszálvonal minden sorhoz, a referencia dizájn tábla-stílusát tükrözve.
         dgv.RowPostPaint += (_, e) =>
         {
             using var pen = new Pen(Theme.GridLine);
@@ -650,7 +658,7 @@ public class MainForm : Form
         return dgv;
     }
 
-    // ── Data loading ────────────────────────────────────────────────────────
+    // ── Adatbetöltés ────────────────────────────────────────────────────────
 
     private async Task LoadOrdersAsync()
     {
@@ -704,11 +712,12 @@ public class MainForm : Form
         }
     }
 
-    // ── Search + pagination (client-side) ───────────────────────────────────
+    // ── Keresés + lapozás (kliensoldali) ────────────────────────────────────
 
     /// <summary>
-    /// Applies the current search filter and re-renders the current page.
-    /// Called on each keystroke, on page change, and after data reloads.
+    /// Alkalmazza a jelenlegi keresési szűrőt, és újrarendereli az aktuális
+    /// oldalt. Minden billentyűleütésnél, oldal-váltáskor és adat-újratöltés
+    /// után fut.
     /// </summary>
     private void ApplySearchAndPaging(bool resetPage)
     {
@@ -723,8 +732,9 @@ public class MainForm : Form
     }
 
     /// <summary>
-    /// Case-insensitive filter across OrderNumber, CustomerName, and UserEmail.
-    /// Empty query returns the input list unchanged.
+    /// Kis- és nagybetű érzéketlen szűrő OrderNumber, CustomerName és
+    /// UserEmail szerint. Üres lekérdezésre a bemeneti listát változatlanul
+    /// adja vissza.
     /// </summary>
     private static List<OrderViewModel> FilterOrders(List<OrderViewModel> source, string query)
     {
@@ -737,7 +747,7 @@ public class MainForm : Form
         ).ToList();
     }
 
-    /// <summary>Binds the current page slice to the grid and updates pager labels.</summary>
+    /// <summary>Az aktuális oldal-szeletet bind-eli a gridhez és frissíti a lapozó címkéket.</summary>
     private void RenderCurrentPage()
     {
         var skip = (_currentPage - 1) * _pageSize;
@@ -764,7 +774,7 @@ public class MainForm : Form
         RenderCurrentPage();
     }
 
-    // ── Order selection → item loading ──────────────────────────────────────
+    // ── Rendelés kiválasztása → tétel betöltése ─────────────────────────────
 
     private async Task OnOrderSelectedAsync()
     {
@@ -822,9 +832,10 @@ public class MainForm : Form
     }
 
     /// <summary>
-    /// Enable the "revert to Received" button only when the currently selected
-    /// order's StatusCode matches the well-known Complete GUID. Comparison is
-    /// case-insensitive because the API returns the GUID in mixed case.
+    /// Csak akkor engedélyezi a „visszaállítás Received-re" gombot, ha a
+    /// kiválasztott rendelés StatusCode-ja megegyezik a jól ismert Complete
+    /// GUID-dal. Az összehasonlítás kis- és nagybetű érzéketlen, mert az API
+    /// vegyes nagybetűs formában adja vissza a GUID-ot.
     /// </summary>
     private void UpdateRevertButtonState()
     {
@@ -834,12 +845,12 @@ public class MainForm : Form
                 HotcakesOrderStatus.Complete.StatusCode,
                 StringComparison.OrdinalIgnoreCase);
 
-        // In mock mode there's no live API to talk to — keep the button disabled
-        // so the user gets a consistent experience.
+        // Mock módban nincs élő API, amivel beszélhetnénk — a gombot
+        // letiltva tartjuk, hogy a felhasználó konzisztens élményt kapjon.
         _btnRevertToReceived.Enabled = isComplete && !Program.Settings.UseMockData;
     }
 
-    // ── PDF generation ──────────────────────────────────────────────────────
+    // ── PDF generálás ───────────────────────────────────────────────────────
 
     private async Task GenerateInvoiceAsync()
     {
@@ -880,9 +891,10 @@ public class MainForm : Form
             SetStatus($"Számla elmentve: {path}");
             MessageHelper.ShowPdfSaved(path);
 
-            // After the PDF is safely on disk, set the order status to "Complete".
-            // We deliberately do this AFTER the PDF (not before): if status update
-            // fails the user still has the invoice file.
+            // Miután a PDF biztonságosan a lemezre került, a rendelés
+            // állapotát „Complete"-re állítjuk. Szándékosan a PDF UTÁN
+            // (nem előtte): ha az állapot frissítés meghiúsul, a számla
+            // fájl akkor is megmarad a felhasználónál.
             await UpdateStatusAfterInvoiceAsync(_selectedOrder);
         }
         catch (Exception ex)
@@ -897,14 +909,16 @@ public class MainForm : Form
     }
 
     /// <summary>
-    /// Calls <see cref="OrderStatusUpdateService"/> to mark the order Complete and
-    /// surfaces the result via the status strip. Skipped in mock mode (no live API).
-    /// On success the orders grid is refreshed so the new status appears immediately.
+    /// Az <see cref="OrderStatusUpdateService"/>-t hívja, hogy a rendelést
+    /// „Complete"-re állítsa, és az eredményt a státusz csíkban közli.
+    /// Mock módban kihagyva (nincs élő API). Sikeresség esetén a rendelés-
+    /// listát frissíti, hogy az új állapot azonnal látszódjon.
     ///
-    /// <para>Detailed request/response trace is written to the Debug Output only —
-    /// not surfaced as a dialog, so the user gets a single click "invoice → done"
-    /// flow without extra confirmation pop-ups. On hard failure a single warning
-    /// dialog is shown.</para>
+    /// <para>A részletes request / response trace csak a Debug Output-ba
+    /// kerül — nem jelenik meg dialógusként, így a felhasználó egyetlen
+    /// kattintással „számla → kész" folyamatot kap, extra megerősítő
+    /// felugró ablak nélkül. Súlyos hiba esetén egyetlen figyelmeztető
+    /// dialógus jelenik meg.</para>
     /// </summary>
     private async Task UpdateStatusAfterInvoiceAsync(OrderDetail order)
     {
@@ -930,14 +944,14 @@ public class MainForm : Form
             return;
         }
 
-        // Echo the trace into the debug output so a developer can still inspect
-        // it through Visual Studio's Output window if needed.
+        // A trace-t a debug output-ra is kiírjuk, hogy egy fejlesztő szükség
+        // esetén a Visual Studio Output ablakából tudja átnézni.
         System.Diagnostics.Debug.WriteLine("[StatusUpdate] " + result.DebugLog);
 
         if (result.Success)
         {
             SetStatus($"A rendelés ({order.DisplayOrderNumber}) állapota frissítve: Complete.");
-            // Pull a fresh list so the grid reflects the new server state.
+            // Friss listát kérünk, hogy a grid az új szerver-állapotot mutassa.
             await LoadOrdersAsync();
         }
         else
@@ -951,15 +965,17 @@ public class MainForm : Form
     }
 
     /// <summary>
-    /// Reverts the currently selected order from "Complete" back to "Received".
-    /// The button is only enabled when the selected order is in Complete state
-    /// (see <see cref="UpdateRevertButtonState"/>), but we also re-validate here
-    /// in case the underlying state changed since the last selection event.
+    /// A kiválasztott rendelést „Complete"-ből visszaállítja „Received"-re.
+    /// A gomb csak akkor engedélyezett, ha a kiválasztott rendelés Complete
+    /// állapotú (lásd <see cref="UpdateRevertButtonState"/>), de itt is
+    /// újra validáljuk arra az esetre, ha az alapul szolgáló állapot a
+    /// legutóbbi kiválasztás óta változott.
     ///
-    /// <para>The revert runs immediately on click — no confirmation dialog and no
-    /// detail-log dialog. The button itself is the gesture; status output goes to
-    /// the bottom status strip. Hard failures still show a warning dialog so the
-    /// user knows the server side did not change.</para>
+    /// <para>A visszaállítás kattintásra azonnal fut — nincs megerősítő
+    /// dialógus, és nincs napló-dialógus. Maga a gomb a gesztus; a státusz
+    /// kimenet az alsó státusz csíkba kerül. Súlyos hibánál továbbra is
+    /// figyelmeztető dialógus jelenik meg, hogy a felhasználó tudja:
+    /// a szerveren nem történt változás.</para>
     /// </summary>
     private async Task RevertOrderToReceivedAsync()
     {
@@ -1003,16 +1019,17 @@ public class MainForm : Form
             return;
         }
 
-        // Trace goes to Debug Output only — no in-app log dialog.
+        // A trace csak a Debug Output-ba kerül — nincs in-app napló dialógus.
         System.Diagnostics.Debug.WriteLine("[StatusUpdate] " + result.DebugLog);
 
         if (result.Success)
         {
             SetStatus($"A rendelés ({_selectedOrder.DisplayOrderNumber}) állapota visszaállítva: Received.");
 
-            // Refresh the grid so the new status is visible. LoadOrdersAsync clears
-            // _selectedOrder, which will leave the revert button disabled — that's
-            // the correct end state since the order is no longer Complete.
+            // Frissítjük a gridet, hogy az új állapot látszódjon. A
+            // LoadOrdersAsync törli a _selectedOrder-t, ami a visszaállító
+            // gombot letiltva hagyja — ez a helyes végállapot, mert a
+            // rendelés már nem Complete.
             await LoadOrdersAsync();
         }
         else
@@ -1076,17 +1093,18 @@ public class MainForm : Form
         }
     }
 
-    // ── API settings (in-app re-open) ───────────────────────────────────────
+    // ── API beállítások (in-app újranyitás) ─────────────────────────────────
 
     /// <summary>
-    /// Opens <see cref="ApiSettingsForm"/> so the user can change the Hotcakes
-    /// connection (Base URL / API path / API key) without restarting the app
-    /// or hand-editing JSON files.
+    /// Megnyitja az <see cref="ApiSettingsForm"/>-ot, hogy a felhasználó
+    /// úgy tudja módosítani a Hotcakes kapcsolatot (Alap URL / API útvonal /
+    /// API kulcs), hogy közben az alkalmazást nem kell újraindítani, és
+    /// JSON fájlokat sem kell kézzel szerkeszteni.
     ///
-    /// On a successful save, <see cref="ApiSettingsForm.SaveAndClose"/> already
-    /// mirrors the new values into <see cref="Program.Settings"/> — but the
-    /// existing service instances captured the OLD URL/key, so we recreate them
-    /// here and refresh the UI bits that depend on the URL.
+    /// Sikeres mentéskor az <see cref="ApiSettingsForm.SaveAndClose"/> már
+    /// leképezte az új értékeket a <see cref="Program.Settings"/>-be — de a
+    /// meglévő szerviz példányok a RÉGI URL-t / kulcsot fogták el, így itt
+    /// újra létrehozzuk őket, és frissítjük az URL-től függő UI elemeket.
     /// </summary>
     private async Task OpenApiSettingsAsync()
     {
@@ -1094,12 +1112,12 @@ public class MainForm : Form
         var result = dlg.ShowDialog(this);
         if (result != DialogResult.OK) return;
 
-        // Settings have already been written by the form. Rebuild services that
-        // captured the old configuration.
+        // A beállításokat a form már kiírta. A régi konfigurációt
+        // elfogott szervizeket újra létrehozzuk.
         _apiService    = new HotcakesApiService(Program.Settings);
         _statusService = new OrderStatusUpdateService(Program.Settings);
 
-        // Refresh the URL label in the top panel.
+        // Frissítjük a felső panelben az URL címkét.
         _lblApiUrl.Text =
             $"API: {Program.Settings.Hotcakes.BaseUrl.TrimEnd('/')}/" +
             $"{Program.Settings.Hotcakes.ApiBasePath.Trim('/')}";
@@ -1108,7 +1126,7 @@ public class MainForm : Form
         await LoadOrdersAsync();
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
+    // ── Segédek ─────────────────────────────────────────────────────────────
 
     private void SetStatus(string message)
     {

@@ -8,34 +8,35 @@ using QuestPDF.Infrastructure;
 namespace HotcakesWinFormsApp.Services;
 
 /// <summary>
-/// Generates invoice PDFs using QuestPDF.
+/// Számla PDF-eket generál a QuestPDF segítségével.
 ///
-/// WHEN LINE ITEMS ARE AVAILABLE (mock mode or future confirmed endpoint):
-///   A full itemised invoice with a product table is generated.
+/// AMIKOR VANNAK TÉTELSOROK (mock mód, vagy jövőbeli megerősített végpont):
+///   Teljes, tételes számla készül egy termék-táblával.
 ///
-/// WHEN LINE ITEMS ARE NOT AVAILABLE (live API, endpoint not yet confirmed):
-///   A summary invoice is generated containing order header data, addresses,
-///   and grand total — with a clear notice that itemised lines are unavailable.
-///   This is the safer option: the PDF is still useful for reference, and it
-///   never crashes due to an empty items list.
+/// AMIKOR NINCSENEK TÉTELSOROK (élő API, még meg nem erősített végpont):
+///   Összesítő számla készül, ami tartalmazza a rendelés fejléc-adatait,
+///   címeket és a végösszeget — egy egyértelmű megjegyzéssel arról, hogy
+///   a tételes sorok nem elérhetők. Ez a biztonságosabb opció: a PDF így
+///   is használható referenciaként, és sosem omlik össze egy üres tétel-lista
+///   miatt.
 ///
-/// THIS IS A DEMO INVOICE — not a legally compliant Hungarian billing document.
+/// EZ EGY DEMO SZÁMLA — nem felel meg a magyar számlázási jogszabályoknak.
 /// </summary>
 public class InvoiceTemplateService
 {
     private readonly CompanySettings _company;
 
     /// <summary>
-    /// Creates the invoice service using the supplied company settings for the
-    /// "seller" block. Pass in the instance loaded at startup so the file is
-    /// only read once per session.
+    /// Létrehozza a számla szervizt a megadott cégadatokkal az „eladó" blokkhoz.
+    /// Add át az induláskor betöltött példányt, hogy a fájlt sessionönként
+    /// csak egyszer olvassuk be.
     /// </summary>
     public InvoiceTemplateService(CompanySettings company)
     {
         _company = company;
     }
 
-    /// <summary>Parameterless constructor kept for compatibility — loads defaults from disk.</summary>
+    /// <summary>Paraméter nélküli konstruktor a kompatibilitás kedvéért — a lemezről tölt be alapértékeket.</summary>
     public InvoiceTemplateService() : this(CompanySettings.LoadOrCreate()) { }
 
     public string GenerateInvoice(OrderDetail order)
@@ -61,13 +62,14 @@ public class InvoiceTemplateService
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // Layout sections
+    // Layout szekciók
     // ──────────────────────────────────────────────────────────────────────
 
     private void ComposeHeader(IContainer container)
     {
-        // Title, subtitle and ID prefix all come from companysettings.json so
-        // a non-developer can rebrand the document by editing the JSON file.
+        // A cím, alcím és azonosító-előtag mind a companysettings.json-ból
+        // jön, így egy nem programozó is át tudja brand-elni a dokumentumot
+        // a JSON fájl szerkesztésével.
         var title    = string.IsNullOrWhiteSpace(_company.InvoiceTitle)    ? "SZÁMLA" : _company.InvoiceTitle;
         var subtitle = _company.InvoiceSubtitle ?? "";
         var idPrefix = string.IsNullOrWhiteSpace(_company.InvoiceIdPrefix) ? "DEMO"   : _company.InvoiceIdPrefix.Trim();
@@ -103,7 +105,7 @@ public class InvoiceTemplateService
             });
             col.Item().Element(c => ComposeOrderInfo(c, order));
 
-            // Itemised table or "no items" notice depending on what is available
+            // Tételes tábla vagy „nincs tétel" megjegyzés, attól függően mi áll rendelkezésre.
             if (order.Items.Count > 0)
                 col.Item().Element(c => ComposeItemsTable(c, order));
             else
@@ -115,11 +117,12 @@ public class InvoiceTemplateService
 
     private void ComposeSellerInfo(IContainer container)
     {
-        // Company data comes from companysettings.json via CompanySettings.
-        // Every field in that JSON file is rendered conditionally — leave any
-        // line blank to omit it from the invoice. This lets non-developers
-        // rebrand the invoice (rename the company, change tax number, swap
-        // bank, add a website, etc.) by editing one file.
+        // A cégadatok a CompanySettings-en át a companysettings.json-ból jönnek.
+        // Az abban szereplő minden mezőt feltételesen renderelünk — hagyd
+        // üresen, hogy az adott sor kimaradjon a számláról. Így egy nem
+        // programozó is át tudja brand-elni a számlát (cégnévváltás, adószám
+        // módosítás, bankváltás, weboldal felvétele stb.) egyetlen fájl
+        // szerkesztésével.
         container.Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Column(col =>
         {
             col.Item().Text("ELADÓ").Bold().FontSize(8).FontColor(Colors.Grey.Medium);
@@ -145,7 +148,7 @@ public class InvoiceTemplateService
             if (!string.IsNullOrWhiteSpace(_company.Website))
                 col.Item().Text($"Web: {_company.Website}");
 
-            // Bank line: combine bank name + account when both are present.
+            // Bank-sor: ha mindkettő ki van töltve, kombináljuk a bank nevét és a számlaszámot.
             if (!string.IsNullOrWhiteSpace(_company.BankAccount))
             {
                 var bankLine = string.IsNullOrWhiteSpace(_company.BankName)
@@ -199,7 +202,7 @@ public class InvoiceTemplateService
         });
     }
 
-    /// <summary>Full itemised product table — used when Items are available.</summary>
+    /// <summary>Teljes tételes termék-tábla — akkor használjuk, ha vannak tételek.</summary>
     private void ComposeItemsTable(IContainer container, OrderDetail order)
     {
         container.Table(table =>
@@ -236,7 +239,7 @@ public class InvoiceTemplateService
                 table.Cell().Background(bg).Padding(5).Column(c =>
                 {
                     c.Item().Text(item.DisplayName);
-                    // VariantDisplay: HTML-parsed option text from ProductShortDescription
+                    // VariantDisplay: a ProductShortDescription HTML-jéből kinyert opció-szöveg.
                     if (!string.IsNullOrWhiteSpace(item.VariantDisplay))
                         c.Item().Text(item.VariantDisplay).FontSize(8).FontColor(Colors.Grey.Medium);
                 });
@@ -249,8 +252,9 @@ public class InvoiceTemplateService
     }
 
     /// <summary>
-    /// Shown when Items are empty — either the API returned no items,
-    /// or item loading failed. The invoice is still generated as a summary document.
+    /// Akkor jelenik meg, ha az Items üres — vagy az API nem adott vissza
+    /// tételeket, vagy a tétel-betöltés sikertelen volt. A számla ettől
+    /// még legenerálódik összesítő dokumentumként.
     /// </summary>
     private void ComposeNoItemsNotice(IContainer container)
     {
@@ -286,7 +290,7 @@ public class InvoiceTemplateService
                 });
             }
 
-            // Show breakdown only when meaningful data exists
+            // Csak akkor mutatjuk a részletezést, ha van értelmes adat.
             if (order.TotalOrderBeforeDiscounts > 0 &&
                 order.TotalOrderBeforeDiscounts != order.TotalGrand)
                 Row("Rendelés összege (kedvezmény előtt):", $"{order.TotalOrderBeforeDiscounts:N0} Ft");
@@ -313,8 +317,8 @@ public class InvoiceTemplateService
 
     private void ComposeFooter(IContainer container)
     {
-        // Footer disclaimer comes from companysettings.json (InvoiceFooterNote).
-        // Leave it blank in the JSON to suppress the disclaimer entirely.
+        // A lábjegyzet disclaimer a companysettings.json-ból jön (InvoiceFooterNote).
+        // Hagyd üresen a JSON-ban, hogy teljesen elrejtsd a disclaimert.
         var note = _company.InvoiceFooterNote ?? "";
 
         container.BorderTop(1).BorderColor(Colors.Grey.Lighten2).PaddingTop(6).Row(row =>
@@ -322,7 +326,7 @@ public class InvoiceTemplateService
             if (!string.IsNullOrWhiteSpace(note))
                 row.RelativeItem().Text(note).FontSize(7).FontColor(Colors.Grey.Medium);
             else
-                row.RelativeItem().Text(""); // keep the row balanced even when empty
+                row.RelativeItem().Text(""); // tartsa a sort kiegyensúlyozottan akkor is, ha üres
 
             row.ConstantItem(60).AlignRight().Text(t =>
             {

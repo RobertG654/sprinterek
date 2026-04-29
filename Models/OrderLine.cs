@@ -4,30 +4,30 @@ using System.Text.RegularExpressions;
 namespace HotcakesWinFormsApp.Models;
 
 /// <summary>
-/// A single product line item from:
+/// Egyetlen terméktétel-sor a következőből:
 ///   GET /orders/{bvin}/items  →  Content.Items[n]
 ///
-/// CONFIRMED REAL FIELD NAMES (from live API):
+/// MEGERŐSÍTETT VALÓDI MEZŐNEVEK (élő API-ról):
 ///   ProductName, ProductSku, Quantity,
 ///   BasePricePerItem, AdjustedPricePerItem, LineTotal,
-///   ProductShortDescription (often HTML with option/variant info),
+///   ProductShortDescription (gyakran HTML, opció / variáns infóval),
 ///   SelectionData
 ///
-/// NOTE: The real SKU field is "ProductSku", not "Sku".
+/// FONTOS: A valódi SKU mező neve „ProductSku", nem „Sku".
 ///
-/// VARIANT/OPTION DATA:
-///   ProductShortDescription often contains HTML such as:
+/// VARIÁNS / OPCIÓ ADATOK:
+///   A ProductShortDescription gyakran ilyen HTML-t tartalmaz:
 ///     <ul class="lineitemoptions"><li>Szín: XL</li></ul>
-///   VariantDisplay extracts readable text from this HTML.
-///   Falls back to SelectionData if ProductShortDescription is empty.
+///   A VariantDisplay olvasható szöveget nyer ki ebből a HTML-ből.
+///   Ha a ProductShortDescription üres, a SelectionData-ra esik vissza.
 /// </summary>
 public class OrderLine
 {
-    // ── Identity fields ─────────────────────────────────────────────────────
+    // ── Azonosító mezők ─────────────────────────────────────────────────────
     [JsonPropertyName("Id")]
     public int Id { get; set; }
 
-    /// <summary>Integer store ID. API sends as number.</summary>
+    /// <summary>Egész számos bolt-azonosító. Az API számként küldi.</summary>
     [JsonPropertyName("StoreId")]
     public int StoreId { get; set; }
 
@@ -35,13 +35,13 @@ public class OrderLine
     public string ProductName { get; set; } = "";
 
     /// <summary>
-    /// Short description — often contains HTML-encoded variant/option data.
-    /// Use VariantDisplay for a readable version.
+    /// Rövid leírás — gyakran HTML kódolt variáns / opció adat.
+    /// Olvasható verzióhoz használd a VariantDisplay-t.
     /// </summary>
     [JsonPropertyName("ProductShortDescription")]
     public string ProductShortDescription { get; set; } = "";
 
-    /// <summary>Real SKU field in the Hotcakes API payload.</summary>
+    /// <summary>A Hotcakes API payloadban a valódi SKU mező.</summary>
     [JsonPropertyName("ProductSku")]
     public string Sku { get; set; } = "";
 
@@ -57,7 +57,7 @@ public class OrderLine
     [JsonPropertyName("LineTotal")]
     public decimal LineTotal { get; set; }
 
-    // ── Quantity sub-fields ─────────────────────────────────────────────────
+    // ── Mennyiségi al-mezők ─────────────────────────────────────────────────
     [JsonPropertyName("QuantityReturned")]
     public int QuantityReturned { get; set; }
 
@@ -67,7 +67,7 @@ public class OrderLine
     [JsonPropertyName("FreeQuantity")]
     public int FreeQuantity { get; set; }
 
-    // ── Shipping cost fields ────────────────────────────────────────────────
+    // ── Szállítási költség mezők ────────────────────────────────────────────
     [JsonPropertyName("ShippingPortion")]
     public decimal ShippingPortion { get; set; }
 
@@ -80,7 +80,7 @@ public class OrderLine
     [JsonPropertyName("ShipFromMode")]
     public int ShipFromMode { get; set; }
 
-    // ── Tax fields ──────────────────────────────────────────────────────────
+    // ── ÁFA mezők ───────────────────────────────────────────────────────────
     [JsonPropertyName("TaxRate")]
     public decimal TaxRate { get; set; }
 
@@ -90,7 +90,7 @@ public class OrderLine
     [JsonPropertyName("TaxSchedule")]
     public int TaxSchedule { get; set; }
 
-    // ── Physical dimensions ─────────────────────────────────────────────────
+    // ── Fizikai méretek ─────────────────────────────────────────────────────
     [JsonPropertyName("ProductShippingWeight")]
     public decimal ProductShippingWeight { get; set; }
 
@@ -103,7 +103,7 @@ public class OrderLine
     [JsonPropertyName("ProductShippingHeight")]
     public decimal ProductShippingHeight { get; set; }
 
-    // ── Boolean flags ───────────────────────────────────────────────────────
+    // ── Logikai jelzők ──────────────────────────────────────────────────────
     [JsonPropertyName("IsUserSuppliedPrice")]
     public bool IsUserSuppliedPrice { get; set; }
 
@@ -122,7 +122,7 @@ public class OrderLine
     [JsonPropertyName("IsUpchargeAllowed")]
     public bool IsUpchargeAllowed { get; set; }
 
-    // ── Status strings ──────────────────────────────────────────────────────
+    // ── Állapot string-ek ───────────────────────────────────────────────────
     [JsonPropertyName("StatusCode")]
     public string StatusCode { get; set; } = "";
 
@@ -139,47 +139,50 @@ public class OrderLine
     public string VariantId { get; set; } = "";
 
     /// <summary>
-    /// Option/variant selection references. The API sends this as an array of objects,
-    /// each holding internal GUIDs that cross-reference Hotcakes option records.
-    /// The human-readable option text is in ProductShortDescription, not here.
-    /// Use VariantDisplay for display.
+    /// Opció / variáns kiválasztási referenciák. Az API objektum-tömbként küldi,
+    /// minden objektum belső GUID-okat tartalmaz, amik Hotcakes opció-rekordokra
+    /// hivatkoznak.
+    /// Az ember által olvasható opció-szöveg a ProductShortDescription-ben van,
+    /// nem itt.
+    /// Megjelenítéshez a VariantDisplay-t használd.
     /// </summary>
     [JsonPropertyName("SelectionData")]
     public List<SelectionDataEntry> SelectionData { get; set; } = new();
 
-    // ── Computed display properties ─────────────────────────────────────────
+    // ── Származtatott megjelenítési tulajdonságok ───────────────────────────
 
-    /// <summary>Display name — ProductName, never empty.</summary>
+    /// <summary>Megjelenítési név — ProductName, sosem üres.</summary>
     [JsonIgnore]
     public string DisplayName =>
         !string.IsNullOrWhiteSpace(ProductName) ? ProductName : "Ismeretlen termék";
 
     /// <summary>
-    /// Best available unit price.
-    /// Prefers AdjustedPricePerItem (post-discount), falls back to BasePricePerItem.
-    /// Grid and PDF code should use this.
+    /// A legjobb elérhető egységár.
+    /// Elsősorban AdjustedPricePerItem (kedvezmény után), különben
+    /// BasePricePerItem.
+    /// A grid és a PDF kódnak ezt kell használnia.
     /// </summary>
     [JsonIgnore]
     public decimal UnitPrice =>
         AdjustedPricePerItem != 0 ? AdjustedPricePerItem : BasePricePerItem;
 
     /// <summary>
-    /// Line total for display/PDF. Uses LineTotal if non-zero,
-    /// otherwise computes Quantity × UnitPrice.
+    /// Megjelenítéshez / PDF-hez használt sor-összeg. Ha a LineTotal nem nulla,
+    /// azt használja, különben Quantity × UnitPrice számítást ad vissza.
     /// </summary>
     [JsonIgnore]
     public decimal LineTotalResolved =>
         LineTotal != 0 ? LineTotal : Quantity * UnitPrice;
 
     /// <summary>
-    /// Readable variant/option text for display.
+    /// Megjelenítésre alkalmas, olvasható variáns / opció szöveg.
     ///
-    /// Priority:
-    ///   1. &lt;li&gt; text extracted from ProductShortDescription HTML
-    ///      e.g. "&lt;ul&gt;&lt;li&gt;Szín: XL&lt;/li&gt;&lt;/ul&gt;" → "Szín: XL"
-    ///   2. ProductShortDescription with all HTML tags stripped
-    ///   3. SelectionData as-is
-    ///   4. Empty string
+    /// Sorrend:
+    ///   1. A ProductShortDescription HTML &lt;li&gt; elemeiből kinyert szöveg,
+    ///      pl. "&lt;ul&gt;&lt;li&gt;Szín: XL&lt;/li&gt;&lt;/ul&gt;" → "Szín: XL"
+    ///   2. A teljes ProductShortDescription, HTML-tagek nélkül
+    ///   3. A SelectionData úgy, ahogy van
+    ///   4. Üres karakterlánc
     /// </summary>
     [JsonIgnore]
     public string VariantDisplay
@@ -188,7 +191,7 @@ public class OrderLine
         {
             if (!string.IsNullOrWhiteSpace(ProductShortDescription))
             {
-                // Try to extract <li>...</li> inner text (covers the confirmed HTML format)
+                // Próbáljuk kinyerni a <li>...</li> belső szövegét (a megerősített HTML formátumot fedi le).
                 var liMatches = Regex.Matches(ProductShortDescription,
                     @"<li[^>]*>(.*?)</li>",
                     RegexOptions.IgnoreCase | RegexOptions.Singleline);
@@ -202,31 +205,31 @@ public class OrderLine
                     if (!string.IsNullOrWhiteSpace(joined)) return joined;
                 }
 
-                // Fallback: strip all HTML tags from the full string
+                // Visszaesés: minden HTML tag eltávolítása a teljes szövegből.
                 var stripped = StripTags(ProductShortDescription).Trim();
                 if (!string.IsNullOrWhiteSpace(stripped)) return stripped;
             }
 
-            // SelectionData entries contain only internal GUIDs — not user-readable.
-            // ProductShortDescription is the only source of readable option text.
+            // A SelectionData csak belső GUID-okat tartalmaz — nem felhasználó-olvasható.
+            // A ProductShortDescription az egyetlen forrás az olvasható opció-szöveghez.
             return "";
         }
     }
 
-    /// <summary>Strips all HTML tags from a string using a simple regex.</summary>
+    /// <summary>Egyszerű regex-szel eltávolít minden HTML taget egy karakterláncból.</summary>
     private static string StripTags(string html) =>
         Regex.Replace(html, "<[^>]+>", "");
 }
 
 /// <summary>
-/// One element of the SelectionData array on an OrderLine.
+/// Az OrderLine SelectionData tömbjének egyetlen eleme.
 ///
-/// CONFIRMED real shape:
+/// MEGERŐSÍTETT valódi alak:
 ///   { "OptionBvin": "cc24849502574e30875f85c0e41cd3c7",
 ///     "SelectionData": "a0293857050c489b8f0c5ab21524493b" }
 ///
-/// Both values are internal Hotcakes GUIDs (not human-readable).
-/// Human-readable option text lives in OrderLine.ProductShortDescription.
+/// Mindkét érték belső Hotcakes GUID (nem ember-olvasható).
+/// Az ember által olvasható opció-szöveg az OrderLine.ProductShortDescription-ben él.
 /// </summary>
 public class SelectionDataEntry
 {

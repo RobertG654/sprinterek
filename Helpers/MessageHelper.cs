@@ -1,8 +1,8 @@
 namespace HotcakesWinFormsApp.Helpers;
 
 /// <summary>
-/// Centralizes all MessageBox calls with Hungarian UI text.
-/// Use these instead of calling MessageBox.Show directly.
+/// Az összes MessageBox hívást központosítja, magyar UI szövegekkel.
+/// Ezeket használd a MessageBox.Show közvetlen hívása helyett.
 /// </summary>
 public static class MessageHelper
 {
@@ -19,13 +19,14 @@ public static class MessageHelper
         => MessageBox.Show(message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
     /// <summary>
-    /// Displays an API error dialog. The message is expected to already be a
-    /// user-friendly Hungarian string from ApiExceptionMapper — no generic wrapper is added.
+    /// API hibaablakot jelenít meg. A bejövő üzenet feltehetően már egy
+    /// felhasználóbarát magyar szöveg az ApiExceptionMapper-ből — nincs
+    /// hozzáadva általános wrapper.
     /// </summary>
     public static void ShowApiError(string message, string title = "API Hiba")
         => ShowError(message, title);
 
-    /// <summary>Displays a success dialog after a PDF is saved.</summary>
+    /// <summary>Sikeres mentés ablak egy elmentett PDF után.</summary>
     public static void ShowPdfSaved(string path)
         => ShowInfo($"PDF sikeresen elmentve:\n{path}", "PDF Mentve");
 }

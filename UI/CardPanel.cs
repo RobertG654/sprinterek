@@ -3,13 +3,13 @@ using System.Drawing.Drawing2D;
 namespace HotcakesWinFormsApp.UI;
 
 /// <summary>
-/// White rounded "card" panel with a thin warm-beige border. Replaces the default
-/// WinForms <see cref="GroupBox"/> caption box with something that matches the
-/// reference design.
+/// Fehér, lekerekített „kártya" panel vékony meleg-bézs szegéllyel. A
+/// referencia dizájnnak megfelelően helyettesíti az alapértelmezett WinForms
+/// <see cref="GroupBox"/> felirat-mezőjét.
 ///
-/// The card has its own <c>Header</c> area at the top so callers can drop in a
-/// section title (and optional right-aligned counter / hint text) without dealing
-/// with custom paint code.
+/// A kártyának van saját <c>Header</c> területe felül, így a hívók
+/// belerakhatnak egy szekció-címet (és opcionálisan jobbra igazított számláló /
+/// hint szöveget) anélkül, hogy egyedi paint kóddal kellene foglalkozniuk.
 /// </summary>
 internal class CardPanel : Panel
 {
@@ -21,7 +21,7 @@ internal class CardPanel : Panel
                | ControlStyles.OptimizedDoubleBuffer
                | ControlStyles.ResizeRedraw
                | ControlStyles.UserPaint, true);
-        BackColor = Theme.PageBg;       // match parent — only the rounded fill is opaque
+        BackColor = Theme.PageBg;       // egyezik a szülővel — csak a lekerekített kitöltés átlátszatlan
         ForeColor = Theme.TextPrimary;
         Padding   = new Padding(16, 14, 16, 14);
     }
@@ -30,9 +30,9 @@ internal class CardPanel : Panel
     {
         var g = e.Graphics;
 
-        // Clear the corner gaps with the page background so the rounded
-        // shape blends visually into the parent. We do this manually
-        // because UserPaint suppresses the default background fill.
+        // A lekerekített forma sarok-réseit a lap háttérszínével festjük át,
+        // hogy vizuálisan beleolvadjon a szülőbe. Manuálisan tesszük, mert
+        // a UserPaint elnyomja az alapértelmezett háttér-kitöltést.
         using (var bg = new SolidBrush(Theme.PageBg))
             g.FillRectangle(bg, ClientRectangle);
 
@@ -47,9 +47,9 @@ internal class CardPanel : Panel
 }
 
 /// <summary>
-/// Section header strip used at the top of a <see cref="CardPanel"/> — left side
-/// shows the bold section title, right side shows an optional muted counter
-/// (e.g. "15 db rendelés").
+/// Szekció-fejléc csík egy <see cref="CardPanel"/> tetejére — bal oldalon a
+/// vastag szekció-cím, jobb oldalon egy opcionális tompa számláló
+/// (pl. „15 db rendelés").
 /// </summary>
 internal class SectionHeader : Panel
 {

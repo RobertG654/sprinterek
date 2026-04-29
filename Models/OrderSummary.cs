@@ -5,10 +5,11 @@ using HotcakesWinFormsApp.Helpers;
 namespace HotcakesWinFormsApp.Models;
 
 /// <summary>
-/// Maps the REAL Hotcakes Commerce order payload returned by:
+/// A VALÓDI Hotcakes Commerce rendelés payload-ot képezi le, amit a
 ///   GET {BaseUrl}/{ApiBasePath}/orders?key={apiKey}
+/// végpont ad vissza.
 ///
-/// CONFIRMED FIELD LIST (from live API response):
+/// MEGERŐSÍTETT MEZŐLISTA (élő API válaszból):
 ///   Id, bvin, StoreId, LastUpdatedUtc, TimeOfOrderUtc,
 ///   OrderNumber, ThirdPartyOrderId, UserEmail, UserID, CustomProperties,
 ///   PaymentStatus (int), ShippingStatus (int), IsPlaced,
@@ -20,27 +21,28 @@ namespace HotcakesWinFormsApp.Models;
 ///   ShippingMethodId, ShippingMethodDisplayName,
 ///   ShippingProviderId, ShippingProviderServiceCode
 ///
-/// NOTE: The /orders endpoint does NOT return line items (Items/products).
-/// See OrderDetail for the items-capable model and HotcakesApiService for
-/// the stub endpoint awaiting confirmation.
+/// FONTOS: Az /orders végpont NEM ad vissza tételsorokat (Items / termékek).
+/// Lásd az OrderDetail-t a tételeket kezelő modellhez, és a HotcakesApiService-t
+/// a megerősítésre váró stub végponthoz.
 ///
-/// DATE FORMAT: Hotcakes returns dates as "/Date(milliseconds)/"
-/// This is handled automatically by DotNetJsonDateConverter.
+/// DÁTUM FORMÁTUM: A Hotcakes „/Date(milliszekundum)/" formában adja vissza
+/// a dátumokat. Ezt automatikusan a DotNetJsonDateConverter kezeli.
 /// </summary>
 public class OrderSummary
 {
-    /// <summary>Auto-increment integer ID (less stable than Bvin for references).</summary>
+    /// <summary>Auto-növekvő egész azonosító (kevésbé stabil hivatkozásokhoz, mint a Bvin).</summary>
     [JsonPropertyName("Id")]
     public int Id { get; set; }
 
     /// <summary>
-    /// Unique GUID string identifier (Hotcakes calls it "Bvin").
-    /// This is the stable primary key for orders. Note: lowercase "bvin" in the API.
+    /// Egyedi GUID karakterlánc azonosító (a Hotcakes „Bvin"-nek hívja).
+    /// Ez a rendelések stabil elsődleges kulcsa. Megjegyzés: a JSON-ban kis
+    /// kezdőbetűvel: „bvin".
     /// </summary>
     [JsonPropertyName("bvin")]
     public string Bvin { get; set; } = "";
 
-    /// <summary>Integer store ID. The API sends this as a number, not a string.</summary>
+    /// <summary>Egész számos bolt-azonosító. Az API számként küldi, nem stringként.</summary>
     [JsonPropertyName("StoreId")]
     public int StoreId { get; set; }
 
@@ -48,14 +50,15 @@ public class OrderSummary
     [JsonConverter(typeof(DotNetJsonDateConverter))]
     public DateTime LastUpdatedUtc { get; set; }
 
-    /// <summary>Order placement time in UTC. Use OrderDateLocal for display.</summary>
+    /// <summary>A rendelés leadásának időpontja UTC-ben. Megjelenítéshez használd az OrderDateLocal-t.</summary>
     [JsonPropertyName("TimeOfOrderUtc")]
     [JsonConverter(typeof(DotNetJsonDateConverter))]
     public DateTime TimeOfOrderUtc { get; set; }
 
     /// <summary>
-    /// Human-readable order number (e.g. "1001").
-    /// May be empty for draft/unplaced orders — use DisplayOrderNumber for display.
+    /// Ember által olvasható rendelésszám (pl. „1001").
+    /// Lehet üres piszkozat / nem véglegesített rendeléseknél — megjelenítéshez
+    /// használd a DisplayOrderNumber-t.
     /// </summary>
     [JsonPropertyName("OrderNumber")]
     public string OrderNumber { get; set; } = "";
@@ -70,31 +73,33 @@ public class OrderSummary
     public string UserId { get; set; } = "";
 
     /// <summary>
-    /// Arbitrary key-value metadata. Stored as raw JsonElement to avoid
-    /// requiring a sub-model definition. Not displayed in the UI currently.
+    /// Tetszőleges kulcs-érték metaadat. Nyers JsonElement-ként tároljuk, hogy
+    /// ne kelljen al-modellt definiálni hozzá. Jelenleg az UI nem jeleníti meg.
     /// </summary>
     [JsonPropertyName("CustomProperties")]
     public JsonElement? CustomProperties { get; set; }
 
     /// <summary>
-    /// Payment status as Hotcakes integer enum.
-    /// 0=Unknown  1=Unpaid  2=PartiallyPaid  3=Paid  4=Overpaid  5=Refunded
-    /// See PaymentStatusDisplay for the Hungarian mapped text.
+    /// Fizetési állapot Hotcakes egész enum-ként.
+    /// 0=Ismeretlen  1=Fizetetlen  2=Részben fizetve  3=Fizetve
+    /// 4=Túlfizetett  5=Visszatérítve
+    /// A magyar nyelvű leképezést lásd: PaymentStatusDisplay.
     /// </summary>
     [JsonPropertyName("PaymentStatus")]
     public int PaymentStatus { get; set; }
 
     /// <summary>
-    /// Shipping status as Hotcakes integer enum.
-    /// 0=Unknown  1=Unshipped  2=PartiallyShipped  3=FullyShipped  4=NonShipping
-    /// See ShippingStatusDisplay for the Hungarian mapped text.
+    /// Szállítási állapot Hotcakes egész enum-ként.
+    /// 0=Ismeretlen  1=Nem szállítva  2=Részben szállítva  3=Szállítva
+    /// 4=Nem szállítandó
+    /// A magyar nyelvű leképezést lásd: ShippingStatusDisplay.
     /// </summary>
     [JsonPropertyName("ShippingStatus")]
     public int ShippingStatus { get; set; }
 
     /// <summary>
-    /// True = order has been finalized/placed by the customer.
-    /// False = draft order — PDF generation is blocked for unplaced orders.
+    /// True = a rendelést a vevő véglegesítette / leadta.
+    /// False = piszkozat — a PDF generálás piszkozat rendeléseknél le van tiltva.
     /// </summary>
     [JsonPropertyName("IsPlaced")]
     public bool IsPlaced { get; set; }
@@ -102,7 +107,7 @@ public class OrderSummary
     [JsonPropertyName("StatusCode")]
     public string StatusCode { get; set; } = "";
 
-    /// <summary>Human-readable order status from Hotcakes. Use DisplayStatus for display.</summary>
+    /// <summary>Ember által olvasható állapot a Hotcakes-ből. Megjelenítéshez használd a DisplayStatus-t.</summary>
     [JsonPropertyName("StatusName")]
     public string StatusName { get; set; } = "";
 
@@ -136,7 +141,7 @@ public class OrderSummary
     [JsonPropertyName("TotalHandling")]
     public decimal TotalHandling { get; set; }
 
-    /// <summary>Final order total after all discounts, taxes, and shipping.</summary>
+    /// <summary>Végösszeg az összes kedvezmény, ÁFA és szállítás után.</summary>
     [JsonPropertyName("TotalGrand")]
     public decimal TotalGrand { get; set; }
 
@@ -162,12 +167,12 @@ public class OrderSummary
     public string ShippingProviderServiceCode { get; set; } = "";
 
     // ──────────────────────────────────────────────────────────────────
-    // Computed display properties — NOT in the JSON payload
+    // Származtatott megjelenítési tulajdonságok — NEM részei a JSON payload-nak
     // ──────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Order number for UI display. Falls back to Bvin if OrderNumber is empty
-    /// (common for draft/unplaced orders).
+    /// Megjelenítendő rendelésszám az UI-on. Ha az OrderNumber üres (piszkozat /
+    /// nem véglegesített rendeléseknél jellemző), a Bvin-re esik vissza.
     /// </summary>
     [JsonIgnore]
     public string DisplayOrderNumber =>
@@ -176,8 +181,8 @@ public class OrderSummary
         "N/A";
 
     /// <summary>
-    /// Customer display name derived from BillingAddress.
-    /// Falls back: FullName → UserEmail → "Nincs adat"
+    /// A vevő megjelenített neve, a BillingAddress-ből származtatva.
+    /// Visszaesési sorrend: FullName → UserEmail → „Nincs adat".
     /// </summary>
     [JsonIgnore]
     public string CustomerName
@@ -192,8 +197,8 @@ public class OrderSummary
     }
 
     /// <summary>
-    /// Status text for the orders grid.
-    /// Unplaced orders show "Piszkozat" regardless of StatusName.
+    /// Az állapot szövege a rendelés-grid-hez.
+    /// A nem véglegesített rendelések „Piszkozat"-ot mutatnak, függetlenül a StatusName-től.
     /// </summary>
     [JsonIgnore]
     public string DisplayStatus =>
@@ -201,7 +206,7 @@ public class OrderSummary
             ? (!string.IsNullOrWhiteSpace(StatusName) ? StatusName : "N/A")
             : "Piszkozat";
 
-    /// <summary>Hungarian payment status mapped from the integer enum.</summary>
+    /// <summary>Magyar fizetési állapot az egész enum-ból leképezve.</summary>
     [JsonIgnore]
     public string PaymentStatusDisplay => PaymentStatus switch
     {
@@ -214,7 +219,7 @@ public class OrderSummary
         _ => $"({PaymentStatus})"
     };
 
-    /// <summary>Hungarian shipping status mapped from the integer enum.</summary>
+    /// <summary>Magyar szállítási állapot az egész enum-ból leképezve.</summary>
     [JsonIgnore]
     public string ShippingStatusDisplay => ShippingStatus switch
     {
@@ -226,7 +231,7 @@ public class OrderSummary
         _ => $"({ShippingStatus})"
     };
 
-    /// <summary>Shipping method display with "Nincs adat" fallback.</summary>
+    /// <summary>A szállítási mód megjelenítése, „Nincs adat" fallback-kel.</summary>
     [JsonIgnore]
     public string ShippingDisplay =>
         !string.IsNullOrWhiteSpace(ShippingMethodDisplayName)
@@ -234,8 +239,9 @@ public class OrderSummary
             : "Nincs adat";
 
     /// <summary>
-    /// Order date converted to local time for display.
-    /// Returns DateTime.MinValue if TimeOfOrderUtc was not set (e.g. draft with no date).
+    /// A rendelés dátuma helyi időzónára konvertálva, megjelenítéshez.
+    /// DateTime.MinValue, ha a TimeOfOrderUtc nincs beállítva (pl. dátum
+    /// nélküli piszkozat).
     /// </summary>
     [JsonIgnore]
     public DateTime OrderDateLocal =>

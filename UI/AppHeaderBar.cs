@@ -3,14 +3,15 @@ using System.Drawing.Drawing2D;
 namespace HotcakesWinFormsApp.UI;
 
 /// <summary>
-/// Wine-coloured brand strip rendered at the top of every form.
+/// Bor színű márka-csík minden form tetején.
 ///
-/// Layout:
-///   [● logo dot]   [APP TITLE]                                [right slot]   [👤 avatar]
+/// Elrendezés:
+///   [● logó pötty]   [APP CÍM]                                [jobb slot]   [👤 avatár]
 ///
-/// The "right slot" is a generic container: callers put refresh / settings buttons
-/// there. The avatar circle is purely decorative — it mirrors the reference design's
-/// "ADMINISZTRÁTOR A" pill — but does not add any auth functionality.
+/// A „jobb slot" egy általános konténer: a hívók ide rakhatnak frissítés /
+/// beállítások gombokat. Az avatár-kör pusztán dekoratív — a referencia
+/// dizájn „ADMINISZTRÁTOR A" pill-jét tükrözi —, de nem ad hozzá auth
+/// funkciót.
 /// </summary>
 internal class AppHeaderBar : Panel
 {
@@ -83,7 +84,7 @@ internal class AppHeaderBar : Panel
 
     private void LayoutChildren()
     {
-        // Right slot gets pinned to the right edge, leaving room for the avatar circle.
+        // A jobb slot a jobb szélhez van rögzítve, helyet hagyva az avatár-körnek.
         const int avatarSize = 36;
         const int avatarRightMargin = 20;
         int rightEdge = Width - avatarRightMargin - avatarSize - 14;
@@ -98,18 +99,18 @@ internal class AppHeaderBar : Panel
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
 
-        // Bottom hairline to separate the header from the page body.
+        // Alsó hajszálvonal, ami elválasztja a fejlécet a lap törzsétől.
         using (var pen = new Pen(Color.FromArgb(70, 22, 30)))
             g.DrawLine(pen, 0, Height - 1, Width, Height - 1);
 
-        // Logo "dot" — a small soft-pink circle, like the reference mark.
+        // Logó „pötty" — kis lágy-rózsaszín kör, a referencia jelhez hasonlóan.
         var dotRect = new Rectangle(20, (Height - 22) / 2, 22, 22);
         using (var b = new SolidBrush(Color.FromArgb(245, 214, 204)))
             g.FillEllipse(b, dotRect);
         using (var b = new SolidBrush(Theme.HeaderBg))
             g.FillEllipse(b, dotRect.X + 6, dotRect.Y + 6, 10, 10);
 
-        // Decorative right-side avatar circle ("A" for Adminisztrátor).
+        // Dekoratív jobb oldali avatár-kör („A" mint Adminisztrátor).
         const int avatarSize = 36;
         const int avatarRightMargin = 20;
         var avatarRect = new Rectangle(
@@ -126,7 +127,7 @@ internal class AppHeaderBar : Panel
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
         letterFont.Dispose();
 
-        // "ADMINISZTRÁTOR" label to the left of the avatar.
+        // „ADMINISZTRÁTOR" felirat az avatártól balra.
         var adminLabelFont = new Font("Segoe UI Semibold", 8f, FontStyle.Bold);
         var labelSize = TextRenderer.MeasureText(g, "ADMINISZTRÁTOR", adminLabelFont);
         var labelPoint = new Point(avatarRect.Left - labelSize.Width - 10,

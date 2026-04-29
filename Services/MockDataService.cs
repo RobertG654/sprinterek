@@ -3,20 +3,21 @@ using HotcakesWinFormsApp.Models;
 namespace HotcakesWinFormsApp.Services;
 
 /// <summary>
-/// Provides static mock data for UI demos and offline testing.
-/// Activated when UseMockData = true in appsettings.json.
+/// Statikus mintaadatokat biztosít UI demókhoz és offline teszteléshez.
+/// Akkor aktiválódik, ha az appsettings.json-ban UseMockData = true.
 ///
-/// Mock orders use the SAME field names as the real OrderSummary model.
-/// PaymentStatus and ShippingStatus are integers matching the Hotcakes enum.
-/// IsPlaced = true on all 3 sample orders (placed/finalized).
+/// A mock rendelések UGYANAZOKAT a mezőneveket használják, mint a valódi
+/// OrderSummary modell.
+/// A PaymentStatus és ShippingStatus a Hotcakes enum-mal egyező egész szám.
+/// Mind a 3 mintarendelésen IsPlaced = true (leadott / véglegesített).
 ///
-/// GetMockOrderItems() returns product lines so the items grid can be fully
-/// demonstrated in mock mode — reflecting what the UI will look like once a
-/// real items endpoint is confirmed.
+/// A GetMockOrderItems() termék-sorokat ad vissza, így mock módban a tétel
+/// grid teljes körűen bemutatható — az UI pontosan úgy fog kinézni, ahogy
+/// egy megerősített items végpont esetén.
 /// </summary>
 public static class MockDataService
 {
-    // ── Orders list ──────────────────────────────────────────────────────────
+    // ── Rendelés-lista ──────────────────────────────────────────────────────
 
     public static List<OrderSummary> GetMockOrders() => new()
     {
@@ -34,8 +35,8 @@ public static class MockDataService
             TotalTax        = 0m,
             IsPlaced        = true,
             StatusName      = "Feldolgozva",
-            PaymentStatus   = 3,    // Paid
-            ShippingStatus  = 1,    // Unshipped
+            PaymentStatus   = 3,    // Fizetve
+            ShippingStatus  = 1,    // Nem szállítva
             ShippingMethodDisplayName = "Magyar Posta – standard",
             TimeOfOrderUtc  = new DateTime(2024, 1, 15, 10, 30, 0, DateTimeKind.Utc),
             LastUpdatedUtc  = new DateTime(2024, 1, 16, 8, 0, 0, DateTimeKind.Utc)
@@ -54,8 +55,8 @@ public static class MockDataService
             TotalTax        = 0m,
             IsPlaced        = true,
             StatusName      = "Szállítás alatt",
-            PaymentStatus   = 3,    // Paid
-            ShippingStatus  = 3,    // FullyShipped
+            PaymentStatus   = 3,    // Fizetve
+            ShippingStatus  = 3,    // Teljesen szállítva
             ShippingMethodDisplayName = "GLS futárszolgálat",
             TimeOfOrderUtc  = new DateTime(2024, 1, 18, 14, 15, 0, DateTimeKind.Utc),
             LastUpdatedUtc  = new DateTime(2024, 1, 19, 9, 30, 0, DateTimeKind.Utc)
@@ -74,25 +75,26 @@ public static class MockDataService
             TotalTax        = 0m,
             IsPlaced        = true,
             StatusName      = "Új rendelés",
-            PaymentStatus   = 1,    // Unpaid
-            ShippingStatus  = 4,    // NonShipping (personal pickup)
+            PaymentStatus   = 1,    // Fizetetlen
+            ShippingStatus  = 4,    // Nem szállítandó (személyes átvétel)
             ShippingMethodDisplayName = "Személyes átvétel",
             TimeOfOrderUtc  = new DateTime(2024, 1, 20, 9, 0, 0, DateTimeKind.Utc),
             LastUpdatedUtc  = new DateTime(2024, 1, 20, 9, 0, 0, DateTimeKind.Utc)
         }
     };
 
-    // ── Order line items (mock only — real endpoint not yet confirmed) ────────
+    // ── Rendelési tételek (csak mock — a valós végpont még nincs megerősítve) ────
 
     /// <summary>
-    /// Returns product line items for a mock order.
-    /// These are used only in mock mode to demonstrate the items grid.
-    /// In live API mode the items list is empty until an endpoint is confirmed.
+    /// Egy mock rendelés terméktétel-sorait adja vissza.
+    /// Ezeket csak mock módban használjuk, hogy a tétel grid bemutatható legyen.
+    /// Élő API módban a tétel-lista üres, amíg egy végpont meg nincs erősítve.
     /// </summary>
     public static List<OrderLine> GetMockOrderItems(string bvin) => bvin switch
     {
-        // Mock items use ProductShortDescription for human-readable option text,
-        // matching the real API where SelectionData is an array of internal GUIDs.
+        // A mock tételek a ProductShortDescription-t használják az ember által
+        // olvasható opció-szöveghez — a valós API-val egyezően, ahol a
+        // SelectionData belső GUID-tömb.
         "MOCK-001-ABCDEF" => new List<OrderLine>
         {
             new() { ProductName = "Pamut póló – Fehér",  Sku = "TSH-WHT-M",       Quantity = 2, BasePricePerItem = 4995m,  LineTotal = 9990m,  ProductShortDescription = "<ul class=\"lineitemoptions\"><li>Méret: M</li></ul>" },
@@ -113,7 +115,7 @@ public static class MockDataService
         _ => new List<OrderLine>()
     };
 
-    // ── Private address helpers ─────────────────────────────────────────────
+    // ── Privát cím-segédek ─────────────────────────────────────────────────
 
     private static AddressInfo HunBillingAddress(
         string first, string last, string line1, string city, string zip, string phone) =>

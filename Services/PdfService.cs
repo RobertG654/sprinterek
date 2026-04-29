@@ -4,14 +4,14 @@ using HotcakesWinFormsApp.Models;
 namespace HotcakesWinFormsApp.Services;
 
 /// <summary>
-/// Orchestrates PDF generation.
-/// This is the single entry point for all PDF operations in the application.
+/// A PDF generálást orchestrálja.
+/// Ez az alkalmazás összes PDF műveletének egyetlen belépési pontja.
 ///
-/// InvoiceTemplateService — generates A4 invoice PDFs (uses CompanySettings for seller block)
-/// LabelTemplateService   — generates A6 shipping label PDFs (uses ZXing.Net barcode)
+/// InvoiceTemplateService — A4 számla PDF-ek (a CompanySettings-et használja az „eladó" blokkhoz)
+/// LabelTemplateService   — A6 szállítási címke PDF-ek (ZXing.Net vonalkóddal)
 ///
-/// Both services save their output under Documents\GeneratedFiles\
-/// and return the absolute path to the created file.
+/// Mindkét szerviz a Dokumentumok\GeneratedFiles\ alá menti a kimenetét, és
+/// visszaadja a létrehozott fájl abszolút útvonalát.
 /// </summary>
 public class PdfService
 {
@@ -19,27 +19,28 @@ public class PdfService
     private readonly LabelTemplateService _labelService = new();
 
     /// <summary>
-    /// Constructs the service with an explicit CompanySettings instance.
-    /// Pass in the one loaded at app startup so the json file is only read once.
+    /// Létrehozza a szervizt egy explicit CompanySettings példánnyal.
+    /// Add át az induláskor betöltött példányt, hogy a json fájlt sessionönként
+    /// csak egyszer olvassuk be.
     /// </summary>
     public PdfService(CompanySettings company)
     {
         _invoiceService = new InvoiceTemplateService(company);
     }
 
-    /// <summary>Parameterless constructor — reads companysettings.json from disk.</summary>
+    /// <summary>Paraméter nélküli konstruktor — a companysettings.json-t a lemezről tölti be.</summary>
     public PdfService() : this(CompanySettings.LoadOrCreate()) { }
 
     /// <summary>
-    /// Generates an invoice PDF for the given order.
-    /// Returns the absolute path of the saved PDF file.
+    /// Számla PDF-et generál a megadott rendeléshez.
+    /// Visszaadja az elmentett PDF fájl abszolút útvonalát.
     /// </summary>
     public string GenerateInvoice(OrderDetail order) =>
         _invoiceService.GenerateInvoice(order);
 
     /// <summary>
-    /// Generates a shipping label PDF for the given order.
-    /// Returns the absolute path of the saved PDF file.
+    /// Szállítási címke PDF-et generál a megadott rendeléshez.
+    /// Visszaadja az elmentett PDF fájl abszolút útvonalát.
     /// </summary>
     public string GenerateLabel(OrderDetail order) =>
         _labelService.GenerateLabel(order);
