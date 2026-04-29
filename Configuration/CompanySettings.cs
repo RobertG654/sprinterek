@@ -38,7 +38,7 @@ public class CompanySettings
     public string Address { get; set; } = "Minta utca 1., 1000 Budapest";
 
     /// <summary>A számlán szereplő kapcsolattartási e-mail.</summary>
-    public string Email { get; set; } = "info@pawpromise.hu";
+    public string Email { get; set; } = "infopawpromise@gmail.com";
 
     /// <summary>A számlán szereplő kapcsolattartási telefonszám.</summary>
     public string Phone { get; set; } = "+36 1 234 5678";
