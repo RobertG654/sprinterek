@@ -16,6 +16,7 @@
 | Számla PDF | QuestPDF, A4, `Dokumentumok\GeneratedFiles\Invoices\` |
 | Cimke PDF | QuestPDF, A6, `Dokumentumok\GeneratedFiles\Labels\` |
 | Mock mód | Hardcoded mintaadatokkal működő UI, ha az API nem elérhető |
+| DPI / felbontás | Per-Monitor V2 magas DPI mód — minden monitoron azonos megjelenés |
 
 ---
 
@@ -189,13 +190,15 @@ A mock mód aktív állapotát narancssárga badge jelzi a főablakon.
 
 ## Cégadatok a számlához
 
-A számla „ELADÓ" (eladó cég) blokkjának minden adata egy helyi JSON fájlban található:
+A számla „ELADÓ" (eladó cég) blokkjának **minden adata** és a számla testreszabható szövegei egy helyi JSON fájlban találhatók:
 
 ```
 HotcakesWinFormsApp\bin\Debug\net8.0-windows\companysettings.json
 ```
 
 (Release build esetén `bin\Release\net8.0-windows\companysettings.json`.)
+
+A fájlt szándékosan a futtatható mellett tartjuk, hogy egy **nem programozó** (pl. cégtulajdonos, irodai munkatárs) is bármikor át tudja írni — mindössze egy szövegszerkesztő (Notepad, VS Code, stb.) szükséges, semmilyen forráskód módosítás nem kell.
 
 ### Első futtatás
 
@@ -205,27 +208,56 @@ Ha a fájl nem létezik, az alkalmazás induláskor automatikusan létrehozza al
 {
   "CompanyName": "Demo Webshop Kft.",
   "TaxNumber": "12345678-2-41",
+  "RegistrationNumber": "",
   "Address": "Minta utca 1., 1000 Budapest",
   "Email": "info@demowebshop.hu",
   "Phone": "+36 1 234 5678",
-  "BankAccount": ""
+  "Website": "",
+  "BankName": "",
+  "BankAccount": "",
+  "InvoiceTitle": "SZÁMLA",
+  "InvoiceSubtitle": "Demo bizonylat — nem hivatalos számla",
+  "InvoiceIdPrefix": "DEMO",
+  "InvoiceFooterNote": "Ez egy DEMO számla. Nem érvényes pénzügyi bizonylat. Jogi megfelelőséghez hitelesített számlázó program szükséges."
 }
 ```
+
+### Mezők
+
+#### Cégadatok
+
+| Mező | Magyarázat |
+|---|---|
+| `CompanyName` | A számlán „ELADÓ"-ként megjelenő cégnév. |
+| `TaxNumber` | Adószám (pl. `12345678-2-41`). |
+| `RegistrationNumber` | Cégjegyzékszám. **Opcionális** — ha üres, nem jelenik meg. |
+| `Address` | Postacím egy sorban (pl. székhely, telephely). |
+| `Email` | Kapcsolattartási email cím. |
+| `Phone` | Kapcsolattartási telefonszám. |
+| `Website` | Cég weboldala (pl. `www.pelda.hu`). **Opcionális** — ha üres, nem jelenik meg. |
+| `BankName` | A számlavezető bank neve (pl. „OTP Bank"). **Opcionális** — ha üres, csak a számlaszám jelenik meg. |
+| `BankAccount` | Bankszámlaszám. **Opcionális** — ha üres, a teljes bank-sor kimarad. |
+
+#### A számla testreszabható szövegei
+
+| Mező | Magyarázat |
+|---|---|
+| `InvoiceTitle` | A számla bal felső sarkában megjelenő nagy cím. Alapértelmezés: `SZÁMLA`. |
+| `InvoiceSubtitle` | Kis piros figyelmeztető szöveg a cím alatt. Üres karakterlánc esetén kimarad — éles használathoz érdemes üresre állítani. |
+| `InvoiceIdPrefix` | A jobb felső azonosítónál használt előtag (pl. `INV`, `SZ`, `2026-`). Ezzel saját számlasorszám-mintát lehet kialakítani. |
+| `InvoiceFooterNote` | A lap alján megjelenő disclaimer / megjegyzés. Üresre állítva nincs lábjegyzet. |
 
 ### A fájl módosítása
 
 1. Állítsa le az alkalmazást.
 2. Nyissa meg a `companysettings.json`-t bármilyen szövegszerkesztővel (pl. Notepad, VS Code).
-3. Írja át a kívánt mezőket. Valós cégadatok:
-   - `CompanyName` — a számlán megjelenő cégnév
-   - `TaxNumber` — adószám (pl. `12345678-2-41`)
-   - `Address` — postacím egy sorban
-   - `Email`, `Phone` — kapcsolattartási adatok
-   - `BankAccount` — **nem kötelező**; ha üres, nem jelenik meg a számlán
+3. Írja át a kívánt mezőket. **Bármelyik mező** változhat egy cég életében — átköltöznek (Address), bankot váltanak (BankName, BankAccount), megváltozik az adószám vagy a cégnév (CompanyName, TaxNumber, RegistrationNumber), új weboldal lesz (Website), új email cím (Email), stb.
 4. Mentse a fájlt, majd indítsa újra az alkalmazást.
 5. A következő generált számlán már az új értékek jelennek meg.
 
-A JSON fájlt a `CompanySettings` osztály olvassa be (`Configuration/CompanySettings.cs`), az `InvoiceTemplateService` pedig ebből tölti a „ELADÓ" blokkot — nincsenek hardcoded cégadatok a kódban.
+> 🔄 **Visszafelé kompatibilitás:** Ha egy korábbi (rövidebb) `companysettings.json`-t talál, az alkalmazás induláskor automatikusan kibővíti a fájlt az új mezőkkel — alapértelmezett értékekkel — hogy szerkeszthető legyen. A meglévő értékek nem vesznek el.
+
+A JSON fájlt a `CompanySettings` osztály olvassa be (`Configuration/CompanySettings.cs`), az `InvoiceTemplateService` pedig ebből tölti a „ELADÓ" blokkot, a fejlécet és a lábjegyzetet — **nincsenek hardcoded cégadatok vagy szövegek a kódban**.
 
 ### Fájl mentési helyek
 
@@ -279,14 +311,14 @@ Azért szükséges a POST utáni GET, mert a Hotcakes — még a teljes-objektum
 
 | Eset | UI reakció |
 |---|---|
-| Sikeres frissítés (verifikálva) | Információs ablak + automatikus rendelés-lista frissítés |
-| A rendelés már „Complete" volt | Sikeres üzenet, POST nem indul |
-| 4xx/5xx hiba a GET-en vagy POST-on | Figyelmeztető ablak a hibakóddal |
-| 200 OK, de a verifikáció nem mutatja a változást | Figyelmeztető ablak (nincs további újrapróbálkozás) |
+| Sikeres frissítés (verifikálva) | **Nincs külön ablak** — az alsó státusz sávban megjelenik a sikerüzenet, és a rendelés-lista automatikusan frissül. |
+| A rendelés már „Complete" volt | Sikeres üzenet a státusz sávban, POST nem indul |
+| 4xx/5xx hiba a GET-en vagy POST-on | Egyetlen figyelmeztető ablak a hibakóddal |
+| 200 OK, de a verifikáció nem mutatja a változást | Egyetlen figyelmeztető ablak (nincs további újrapróbálkozás) |
 | Hálózati hiba / timeout | Magyar nyelvű hibaüzenet az `ApiExceptionMapper`-ből |
 | Mock mód aktív | Az állapot frissítés kihagyva, üzenet a státusz sávban |
 
-Mind a sikeres, mind a sikertelen ablakon van „Részletek" gomb, ami a teljes request/response naplót mutatja egy `StatusUpdateLogForm` ablakban (másolható a vágólapra). A nyers napló mindig a Debug Outputra is megy, `[StatusUpdate]` előtaggal.
+> 💡 **Egyszerűsített folyamat:** A korábbi „Megjeleníti a részletes naplót?" kérdés és a „Részletek" gomb el lett távolítva — egy számla generálás → státusz frissítés folyamat **nem szakad meg további párbeszédablakkal**. A teljes request/response napló továbbra is a Visual Studio Debug Output ablakban olvasható `[StatusUpdate]` előtaggal a fejlesztők számára (a végfelhasználó szempontjából láthatatlan).
 
 ### Kód helye
 
@@ -311,10 +343,10 @@ A főablak alsó panelének **jobb alsó sarkában** található a **„Visszaá
 
 ### Folyamat
 
-1. Megerősítő párbeszédablak — a felhasználónak rá kell hagynia a változtatást.
+1. **Nincs megerősítő párbeszédablak** — a gomb kattintás magában a felhasználói gesztus.
 2. Ugyanaz a `OrderStatusUpdateService.UpdateOrderStatusAsync(bvin, HotcakesOrderStatus.Received)` hívás fut, mint a számla utáni Complete frissítésnél (GET → mutáció → teljes POST → verifikációs GET).
-3. Sikeres visszaállítás után a rendelés-lista automatikusan frissül.
-4. Sikertelenség esetén figyelmeztető ablak jelenik meg, „Részletek" gombbal a teljes naplóhoz.
+3. Sikeres visszaállítás után az alsó státusz sávban jelenik meg a megerősítés, és a rendelés-lista automatikusan frissül — semmilyen extra ablak nem nyílik.
+4. Sikertelenség esetén egy darab figyelmeztető ablak jelenik meg a hibaüzenettel (napló-ablak nincs).
 
 ### Kód helye
 
@@ -455,6 +487,18 @@ HotcakesWinFormsApp/
 
 ---
 
+## Magas DPI / monitor-konzisztens megjelenés
+
+Az alkalmazás **Per-Monitor V2** magas DPI módban fut (lásd `HotcakesWinFormsApp.csproj` → `<ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>`), és minden Form `AutoScaleMode = Dpi`-ra van állítva 96 DPI-s kiindulási mérettel. Ennek a kombinációnak a célja:
+
+- A főablak és a párbeszédablakok **fizikailag azonos méretben** jelennek meg minden monitoron, függetlenül a felbontástól (1080p, 1440p, 4K) és a Windows DPI-skálázás (100% / 125% / 150% / 200%) beállítástól.
+- Ha a felhasználó **több monitor** között húzza át az alkalmazást, és azoknak eltérő a skálázása, a tartalom automatikusan újraskálázódik az új monitor DPI-jére.
+- A vezérlők elrendezése (gombok, gridek, kártyák) arányosan nyúlik / zsugorodik a felhasználói skálázással.
+
+> 🔧 **Ha valami mégis rosszul jelenne meg:** ellenőrizze, hogy a Windows „Display settings" → „Scale and layout" beállítása nem rejtett 175%-on vagy hasonló nem-szabványos értéken van-e. Ezekben az esetekben az AutoScale néha kerekítési hibákat mutathat — ekkor 100% / 125% / 150% / 200% értékek a leg­megbízhatóbbak.
+
+---
+
 ## Hibakeresés (Troubleshooting)
 
 ### Érvénytelen vagy hiányzó API kulcs (HTTP 401/403)
@@ -515,6 +559,10 @@ Ez normális lehet:
 | Teljes-objektum POST stratégia (GET → mutáció → POST → verifikációs GET) | ✅ |
 | Dátum konverter: `/Date(ms)/` olvasás, ISO 8601 írás (Hotcakes input formátum) | ✅ |
 | Manuális „Visszaállítás 'Received'-re" gomb (csak Complete rendeléseknél aktív) | ✅ |
+| Részletes napló dialógus eltávolítva (számla / státusz frissítés / visszaállítás) | ✅ |
+| Visszaállítás megerősítő dialógus eltávolítva (egy kattintás → kész) | ✅ |
+| Per-Monitor V2 magas DPI mód — különböző felbontású monitorokon konzisztens megjelenés | ✅ |
+| Bővített `companysettings.json` (Website, RegistrationNumber, BankName, számla cím / előtag / lábjegyzet) | ✅ |
 
 ---
 

@@ -18,6 +18,8 @@ public class StatusUpdateLogForm : Form
     public StatusUpdateLogForm(string title, string log)
     {
         Text = title;
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96F, 96F);
         StartPosition = FormStartPosition.CenterParent;
         ClientSize = new Size(780, 540);
         MinimumSize = new Size(620, 420);

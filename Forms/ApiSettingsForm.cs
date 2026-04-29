@@ -68,6 +68,10 @@ public class ApiSettingsForm : Form
     private void InitializeComponent()
     {
         Text = "API kapcsolat beállítása";
+        // DPI-consistent scaling — see MainForm for the rationale.
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96F, 96F);
+
         ClientSize = new Size(560, 540);
         MinimumSize = new Size(560, 540);
         MaximumSize = new Size(720, 600);

@@ -8,7 +8,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>HotcakesWinFormsApp</AssemblyName>
     <RootNamespace>HotcakesWinFormsApp</RootNamespace>
-    <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
+    <!--
+      PerMonitorV2: ensures the app renders at the correct physical size on every
+      monitor regardless of its resolution / DPI. Combined with AutoScaleMode = Dpi
+      on each form (set in the form's constructor), this gives a consistent look
+      across 1080p / 1440p / 4K monitors and across DPI scaling settings.
+    -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
 
   <ItemGroup>

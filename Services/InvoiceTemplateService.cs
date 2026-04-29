@@ -66,19 +66,25 @@ public class InvoiceTemplateService
 
     private void ComposeHeader(IContainer container)
     {
+        // Title, subtitle and ID prefix all come from companysettings.json so
+        // a non-developer can rebrand the document by editing the JSON file.
+        var title    = string.IsNullOrWhiteSpace(_company.InvoiceTitle)    ? "SZÁMLA" : _company.InvoiceTitle;
+        var subtitle = _company.InvoiceSubtitle ?? "";
+        var idPrefix = string.IsNullOrWhiteSpace(_company.InvoiceIdPrefix) ? "DEMO"   : _company.InvoiceIdPrefix.Trim();
+
         container.PaddingBottom(10).Row(row =>
         {
             row.RelativeItem().Column(col =>
             {
-                col.Item().Text("SZÁMLA").FontSize(22).Bold();
-                col.Item().Text("Demo bizonylat — nem hivatalos számla")
-                    .FontSize(8).FontColor(Colors.Red.Medium);
+                col.Item().Text(title).FontSize(22).Bold();
+                if (!string.IsNullOrWhiteSpace(subtitle))
+                    col.Item().Text(subtitle).FontSize(8).FontColor(Colors.Red.Medium);
             });
             row.ConstantItem(185).Column(col =>
             {
                 col.Item().AlignRight().Text($"Kiállítás dátuma: {DateTime.Now:yyyy. MM. dd.}");
                 col.Item().AlignRight()
-                    .Text($"Azonosító: DEMO-{DateTime.Now:yyyyMMdd}-{DateTime.Now:HHmm}")
+                    .Text($"Azonosító: {idPrefix}-{DateTime.Now:yyyyMMdd}-{DateTime.Now:HHmm}")
                     .FontSize(8).FontColor(Colors.Grey.Medium);
             });
         });
@@ -109,8 +115,11 @@ public class InvoiceTemplateService
 
     private void ComposeSellerInfo(IContainer container)
     {
-        // Company data now comes from companysettings.json via CompanySettings.
-        // Users can edit that file to customise the seller block on the invoice.
+        // Company data comes from companysettings.json via CompanySettings.
+        // Every field in that JSON file is rendered conditionally — leave any
+        // line blank to omit it from the invoice. This lets non-developers
+        // rebrand the invoice (rename the company, change tax number, swap
+        // bank, add a website, etc.) by editing one file.
         container.Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Column(col =>
         {
             col.Item().Text("ELADÓ").Bold().FontSize(8).FontColor(Colors.Grey.Medium);
@@ -124,15 +133,26 @@ public class InvoiceTemplateService
             if (!string.IsNullOrWhiteSpace(_company.TaxNumber))
                 col.Item().Text($"Adószám: {_company.TaxNumber}");
 
+            if (!string.IsNullOrWhiteSpace(_company.RegistrationNumber))
+                col.Item().Text($"Cégjegyzékszám: {_company.RegistrationNumber}");
+
             if (!string.IsNullOrWhiteSpace(_company.Email))
                 col.Item().Text($"Email: {_company.Email}");
 
             if (!string.IsNullOrWhiteSpace(_company.Phone))
                 col.Item().Text($"Tel: {_company.Phone}");
 
-            // Bank account is optional — only render when supplied.
+            if (!string.IsNullOrWhiteSpace(_company.Website))
+                col.Item().Text($"Web: {_company.Website}");
+
+            // Bank line: combine bank name + account when both are present.
             if (!string.IsNullOrWhiteSpace(_company.BankAccount))
-                col.Item().Text($"Bankszámla: {_company.BankAccount}");
+            {
+                var bankLine = string.IsNullOrWhiteSpace(_company.BankName)
+                    ? $"Bankszámla: {_company.BankAccount}"
+                    : $"Bankszámla ({_company.BankName}): {_company.BankAccount}";
+                col.Item().Text(bankLine);
+            }
         });
     }
 
@@ -293,12 +313,17 @@ public class InvoiceTemplateService
 
     private void ComposeFooter(IContainer container)
     {
+        // Footer disclaimer comes from companysettings.json (InvoiceFooterNote).
+        // Leave it blank in the JSON to suppress the disclaimer entirely.
+        var note = _company.InvoiceFooterNote ?? "";
+
         container.BorderTop(1).BorderColor(Colors.Grey.Lighten2).PaddingTop(6).Row(row =>
         {
-            row.RelativeItem()
-                .Text("Ez egy DEMO számla. Nem érvényes pénzügyi bizonylat. " +
-                      "Jogi megfelelőséghez hitelesített számlázó program szükséges.")
-                .FontSize(7).FontColor(Colors.Grey.Medium);
+            if (!string.IsNullOrWhiteSpace(note))
+                row.RelativeItem().Text(note).FontSize(7).FontColor(Colors.Grey.Medium);
+            else
+                row.RelativeItem().Text(""); // keep the row balanced even when empty
+
             row.ConstantItem(60).AlignRight().Text(t =>
             {
                 t.Span("Oldal ").FontSize(7);

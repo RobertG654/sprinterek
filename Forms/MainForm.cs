@@ -98,6 +98,15 @@ public class MainForm : Form
     private void InitializeComponent()
     {
         Text = "Pawpromise Rendelések";
+        // ── DPI-consistent scaling ───────────────────────────────────────────
+        // AutoScaleMode = Dpi pairs with the PerMonitorV2 application setting
+        // (see HotcakesWinFormsApp.csproj) so the form looks the same physical
+        // size on every monitor regardless of resolution. The AutoScaleDimensions
+        // baseline of 96 DPI is what WinForms uses when laying out the controls
+        // we coded by hand at design time.
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96F, 96F);
+
         Size = new Size(1180, 760);
         MinimumSize = new Size(960, 640);
         StartPosition = FormStartPosition.CenterScreen;
@@ -889,9 +898,13 @@ public class MainForm : Form
 
     /// <summary>
     /// Calls <see cref="OrderStatusUpdateService"/> to mark the order Complete and
-    /// surfaces the result. Skipped in mock mode (no live API). On failure the
-    /// debug log is shown so the user can paste it into a bug report; on success
-    /// the orders grid is refreshed so the new status appears immediately.
+    /// surfaces the result via the status strip. Skipped in mock mode (no live API).
+    /// On success the orders grid is refreshed so the new status appears immediately.
+    ///
+    /// <para>Detailed request/response trace is written to the Debug Output only —
+    /// not surfaced as a dialog, so the user gets a single click "invoice → done"
+    /// flow without extra confirmation pop-ups. On hard failure a single warning
+    /// dialog is shown.</para>
     /// </summary>
     private async Task UpdateStatusAfterInvoiceAsync(OrderDetail order)
     {
@@ -917,46 +930,24 @@ public class MainForm : Form
             return;
         }
 
-        // Always echo the trace into the debug output so it's there even when the
-        // user dismisses the dialog without inspecting it.
+        // Echo the trace into the debug output so a developer can still inspect
+        // it through Visual Studio's Output window if needed.
         System.Diagnostics.Debug.WriteLine("[StatusUpdate] " + result.DebugLog);
 
         if (result.Success)
         {
             SetStatus($"A rendelés ({order.DisplayOrderNumber}) állapota frissítve: Complete.");
-
-            var btn = MessageBox.Show(
-                $"A számla létrejött, és a rendelés állapota \"Complete\"-re frissült.\n\n" +
-                $"Rendelés: {order.DisplayOrderNumber}\n" +
-                "Megjeleníti a részletes naplót?",
-                "Állapot frissítve",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Information);
-            if (btn == DialogResult.Yes)
-                ShowStatusLog("Állapot frissítés naplója", result.DebugLog);
-
             // Pull a fresh list so the grid reflects the new server state.
             await LoadOrdersAsync();
         }
         else
         {
             SetStatus($"A rendelés állapotának frissítése sikertelen: {result.ErrorMessage}");
-            var btn = MessageBox.Show(
+            MessageHelper.ShowWarning(
                 $"A számla létrejött, de a rendelés állapotát NEM sikerült frissíteni.\n\n" +
-                $"{result.ErrorMessage}\n\n" +
-                "Megjeleníti a részletes naplót?",
-                "Állapot frissítési hiba",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
-            if (btn == DialogResult.Yes)
-                ShowStatusLog("Állapot frissítés naplója (hiba)", result.DebugLog);
+                $"{result.ErrorMessage}",
+                "Állapot frissítési hiba");
         }
-    }
-
-    private void ShowStatusLog(string title, string log)
-    {
-        using var dlg = new StatusUpdateLogForm(title, log);
-        dlg.ShowDialog(this);
     }
 
     /// <summary>
@@ -964,6 +955,11 @@ public class MainForm : Form
     /// The button is only enabled when the selected order is in Complete state
     /// (see <see cref="UpdateRevertButtonState"/>), but we also re-validate here
     /// in case the underlying state changed since the last selection event.
+    ///
+    /// <para>The revert runs immediately on click — no confirmation dialog and no
+    /// detail-log dialog. The button itself is the gesture; status output goes to
+    /// the bottom status strip. Hard failures still show a warning dialog so the
+    /// user knows the server side did not change.</para>
     /// </summary>
     private async Task RevertOrderToReceivedAsync()
     {
@@ -988,13 +984,6 @@ public class MainForm : Form
             return;
         }
 
-        var confirm = MessageHelper.ShowQuestion(
-            $"Biztosan vissza szeretné állítani a(z) {_selectedOrder.DisplayOrderNumber} számú " +
-            $"rendelést \"Complete\" állapotból \"Received\" állapotba?\n\n" +
-            "Ez a művelet a Hotcakes szerveren is megtörténik.",
-            "Megerősítés");
-        if (confirm != DialogResult.Yes) return;
-
         SetStatus("Rendelés állapotának visszaállítása (Received)...");
         _btnRevertToReceived.Enabled = false;
 
@@ -1014,21 +1003,12 @@ public class MainForm : Form
             return;
         }
 
+        // Trace goes to Debug Output only — no in-app log dialog.
         System.Diagnostics.Debug.WriteLine("[StatusUpdate] " + result.DebugLog);
 
         if (result.Success)
         {
             SetStatus($"A rendelés ({_selectedOrder.DisplayOrderNumber}) állapota visszaállítva: Received.");
-
-            var btn = MessageBox.Show(
-                $"A rendelés állapota \"Received\"-re visszaállt.\n\n" +
-                $"Rendelés: {_selectedOrder.DisplayOrderNumber}\n" +
-                "Megjeleníti a részletes naplót?",
-                "Állapot visszaállítva",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Information);
-            if (btn == DialogResult.Yes)
-                ShowStatusLog("Állapot visszaállítás naplója", result.DebugLog);
 
             // Refresh the grid so the new status is visible. LoadOrdersAsync clears
             // _selectedOrder, which will leave the revert button disabled — that's
@@ -1038,15 +1018,9 @@ public class MainForm : Form
         else
         {
             SetStatus($"A rendelés állapotának visszaállítása sikertelen: {result.ErrorMessage}");
-            var btn = MessageBox.Show(
-                $"A rendelés állapotát NEM sikerült visszaállítani.\n\n" +
-                $"{result.ErrorMessage}\n\n" +
-                "Megjeleníti a részletes naplót?",
-                "Állapot visszaállítási hiba",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
-            if (btn == DialogResult.Yes)
-                ShowStatusLog("Állapot visszaállítás naplója (hiba)", result.DebugLog);
+            MessageHelper.ShowWarning(
+                $"A rendelés állapotát NEM sikerült visszaállítani.\n\n{result.ErrorMessage}",
+                "Állapot visszaállítási hiba");
 
             UpdateRevertButtonState();
         }
