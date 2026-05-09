@@ -10,8 +10,6 @@ namespace DNNHello.DNNHello.Controllers
 {
     public class GalleryApiController : DnnApiController
     {
-        private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
-
         // ── Feltöltés ──
         [System.Web.Http.HttpPost]
         [DnnAuthorize]
@@ -28,12 +26,6 @@ namespace DNNHello.DNNHello.Controllers
                 if (file == null || file.ContentLength == 0 || string.IsNullOrEmpty(itemName) || string.IsNullOrEmpty(moduleIdStr))
                 {
                     return BadRequest("Hiányzó adatok.");
-                }
-
-                var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
-                if (ext == null || !AllowedExtensions.Contains(ext))
-                {
-                    return BadRequest("Csak képfájlok engedélyezettek (jpg, png, gif, bmp, webp).");
                 }
 
                 int moduleId = int.Parse(moduleIdStr);

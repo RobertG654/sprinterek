@@ -14,14 +14,6 @@ namespace DNNHello.DNNHello.Controllers
     [DnnHandleError]
     public class ItemController : DnnController
     {
-        private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
-
-        private bool IsAllowedImage(HttpPostedFileBase file)
-        {
-            var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
-            return ext != null && AllowedExtensions.Contains(ext);
-        }
-
         [ModuleAction(ControlKey = "Edit", TitleKey = "AddItem")]
         public ActionResult Index()
         {
@@ -60,15 +52,6 @@ namespace DNNHello.DNNHello.Controllers
 
                 if (isOwner || isAdmin)
                 {
-                    if (!string.IsNullOrEmpty(item.ImagePath))
-                    {
-                        var physicalPath = Server.MapPath("~" + item.ImagePath);
-                        if (System.IO.File.Exists(physicalPath))
-                        {
-                            System.IO.File.Delete(physicalPath);
-                        }
-                    }
-
                     ItemManager.Instance.DeleteItem(itemId, ModuleContext.ModuleId);
                 }
             }
@@ -107,19 +90,12 @@ namespace DNNHello.DNNHello.Controllers
 
             if (file != null && file.ContentLength > 0)
             {
-                if (!IsAllowedImage(file))
-                {
-                    ModelState.AddModelError("file", "Csak képfájlok engedélyezettek (jpg, png, gif, bmp, webp).");
-                    return View(item);
-                }
-
                 var fileName = Path.GetFileName(file.FileName);
                 var folderPath = Server.MapPath("~/Portals/0/Gallery/");
                 if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
-                var uniqueName = DateTime.UtcNow.Ticks + "_" + fileName;
-                var path = Path.Combine(folderPath, uniqueName);
+                var path = Path.Combine(folderPath, fileName);
                 file.SaveAs(path);
-                item.ImagePath = "/Portals/0/Gallery/" + uniqueName;
+                item.ImagePath = "/Portals/0/Gallery/" + fileName;
             }
 
             if (item.ItemId == -1)
