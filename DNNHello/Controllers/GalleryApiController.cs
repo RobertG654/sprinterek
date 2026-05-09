@@ -10,6 +10,18 @@ namespace DNNHello.DNNHello.Controllers
 {
     public class GalleryApiController : DnnApiController
     {
+        private static readonly string[] AllowedImageExtensions =
+            { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+
+        private static bool IsImageFile(HttpPostedFile file)
+        {
+            if (file == null) return false;
+            var ext = Path.GetExtension(file.FileName ?? string.Empty).ToLowerInvariant();
+            if (!AllowedImageExtensions.Contains(ext)) return false;
+            var contentType = (file.ContentType ?? string.Empty).ToLowerInvariant();
+            return contentType.StartsWith("image/");
+        }
+
         // ── Feltöltés ──
         [System.Web.Http.HttpPost]
         [DnnAuthorize]
@@ -26,6 +38,11 @@ namespace DNNHello.DNNHello.Controllers
                 if (file == null || file.ContentLength == 0 || string.IsNullOrEmpty(itemName) || string.IsNullOrEmpty(moduleIdStr))
                 {
                     return BadRequest("Hiányzó adatok.");
+                }
+
+                if (!IsImageFile(file))
+                {
+                    return BadRequest("Csak képfájlokat lehet feltölteni (jpg, jpeg, png, gif, bmp, webp).");
                 }
 
                 int moduleId = int.Parse(moduleIdStr);

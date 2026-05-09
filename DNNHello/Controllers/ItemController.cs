@@ -14,6 +14,36 @@ namespace DNNHello.DNNHello.Controllers
     [DnnHandleError]
     public class ItemController : DnnController
     {
+        private static readonly string[] AllowedImageExtensions =
+            { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+
+        private static bool IsImageFile(HttpPostedFileBase file)
+        {
+            if (file == null || file.ContentLength == 0) return false;
+            var ext = Path.GetExtension(file.FileName ?? string.Empty).ToLowerInvariant();
+            if (!AllowedImageExtensions.Contains(ext)) return false;
+            var contentType = (file.ContentType ?? string.Empty).ToLowerInvariant();
+            return contentType.StartsWith("image/");
+        }
+
+        private void DeletePhysicalImage(string imagePath)
+        {
+            if (string.IsNullOrEmpty(imagePath)) return;
+            try
+            {
+                var virtualPath = imagePath.StartsWith("/") ? "~" + imagePath : imagePath;
+                var physicalPath = Server.MapPath(virtualPath);
+                if (!string.IsNullOrEmpty(physicalPath) && System.IO.File.Exists(physicalPath))
+                {
+                    System.IO.File.Delete(physicalPath);
+                }
+            }
+            catch
+            {
+                // Ha a fizikai törlés sikertelen, az adatbázis törlése akkor is folytatódik.
+            }
+        }
+
         [ModuleAction(ControlKey = "Edit", TitleKey = "AddItem")]
         public ActionResult Index()
         {
@@ -52,7 +82,9 @@ namespace DNNHello.DNNHello.Controllers
 
                 if (isOwner || isAdmin)
                 {
+                    var imagePath = item.ImagePath;
                     ItemManager.Instance.DeleteItem(itemId, ModuleContext.ModuleId);
+                    DeletePhysicalImage(imagePath);
                 }
             }
 
@@ -90,6 +122,12 @@ namespace DNNHello.DNNHello.Controllers
 
             if (file != null && file.ContentLength > 0)
             {
+                if (!IsImageFile(file))
+                {
+                    ModelState.AddModelError("file", "Csak képfájlokat lehet feltölteni (jpg, jpeg, png, gif, bmp, webp).");
+                    return View(item);
+                }
+
                 var fileName = Path.GetFileName(file.FileName);
                 var folderPath = Server.MapPath("~/Portals/0/Gallery/");
                 if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
