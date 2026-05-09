@@ -1,4 +1,4 @@
-﻿IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('dbo.DNNHello_Items') AND type = 'U')
+﻿törlIF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('dbo.DNNHello_Items') AND type = 'U')
 BEGIN
     CREATE TABLE dbo.DNNHello_Items (
         ItemId INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
