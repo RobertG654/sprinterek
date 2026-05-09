@@ -1,6 +1,6 @@
 <dotnetnuke type="Package" version="5.0">
   <packages>
-    <package name="DNNHello" type="Module" version="01.00.00">
+    <package name="DNNHello" type="Module" version="01.20.00">
       <friendlyName>DNNHello</friendlyName>
       <description>DNNHello</description>
       <iconFile>~/Icons/Sigma/Software_32X32_Standard.png</iconFile>
@@ -24,10 +24,15 @@
               <name>01.00.00.SqlDataProvider</name>
               <version>01.00.00</version>
             </script>
+            <script type="Install">
+              <path>Providers\DataProviders\SqlDataProvider</path>
+              <name>01.20.00.SqlDataProvider</name>
+              <version>01.20.00</version>
+            </script>
             <script type="UnInstall">
               <path>Providers\DataProviders\SqlDataProvider</path>
               <name>Uninstall.SqlDataProvider</name>
-              <version>01.00.00</version>
+              <version>01.20.00</version>
             </script>
           </scripts>
         </component>
